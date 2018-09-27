@@ -1,6 +1,5 @@
-# gravity7
-
 ``` c
+
 /*  For linux:  -lglut -lGL -lGLU -lm */
 /*  For windows:  -lfreeglut -lopengl32 -lglu32 -lm */
 
@@ -153,21 +152,11 @@ void newYear(void)
 
 void calculateGravity ( double m1, double m2, double pos1[DIM], double pos2[DIM], double G, double result[DIM]){
 
-    /* Calculates the gravitations force between two objects with the given masses and positions.
-    The gravitational constant is also supplied as an input, and the resulting force vector should
-    be stored in the 'result' array.
-    General algorithm:
-    Calculate distance vector from object1 to object 2 by subtracting pos1 from pos2 (each dimension separately)
-    Calculate the magnitude of this distance vector (this is 'r' in the gravity equation)
-    Divide the distance vector by 'r' to get a unit vector in the same direction
-    Calculate the magnitude of the gravitational force using the normal equation
-    Multiply the unit vector you created earlier by the force magnitude, and store this in result.
 
-    Most of these steps will require a loop running over all dimensions (3 times, but use DIM instead).
-    */
 	double distVect[DIM], distMag=0, gForce=0;
 	int i = 0; //counter variable
-
+    arrayZero(result);
+    arrayZero(distVect);
 	for(i=0;i<DIM;i++)
 		{
 		distVect[i] = pos2[i]-pos1[i];
@@ -198,10 +187,6 @@ void calculateGravity ( double m1, double m2, double pos1[DIM], double pos2[DIM]
   // calculateGravityLib ( m1, m2, pos1, pos2, G, result);
 }
 
-/* END OF WEEK 1 FUNCTIONS */
-
-
-/* WEEK 2 FUNCTIONS */
 
 void simulateGravity(int data)
 {
@@ -229,7 +214,6 @@ void simulateGravity(int data)
 
 		for(j=0;j<DIM;j++)
 			{
-
 			uni.bodies[curBody].accel[j] = netForce[j]/uni.bodies[curBody].mass;
 			}
 
@@ -244,59 +228,6 @@ void simulateGravity(int data)
 			}
 		}
 
-/*	for(curBody=0;curBody<uni.numBodies;curBody++)//checks collisions
-		{
-		for(i=0;i<uni.numBodies;i++)
-			{
-			if (i != curBody)
-				{
-				totRad = uni.bodies[curBody].radius+uni.bodies[i].radius;
-				dispMagn = 0;
-				for(j=0;j<DIM;j++)
-					{
-					dispVect[j] = uni.bodies[curBody].position[j] - uni.bodies[i].position[j];
-					dispMagn += dispVect[j]*dispVect[j];
-					}
-				dispMagn = sqrt(dispMagn);
-				if (dispMagn <= totRad && uni.collided[i] == 0)
-					{
-					//computeCollisionLib(uni.bodies,uni.bodies);
-					uni.collided[i] = 1;
-					uni.collided[curBody] = 1;
-					uni.numCollisions += 1;
-					}
-				else
-					{
-					uni.collided[i] = 0;
-					uni.collided[curBody] = 0;
-					}
-				}
-			}
-		}*/
-/*
-		You would also check for collisions here and call the computeCollision function if a collision
-		between two objects does occur.
-
-		==========================
-		Algorithm:
-
-		FOR each body
-			FOR each body except current one
-				compute the displacement vector between two bodies
-				IF (diplacement < sum of radii of bodies) AND (body has not collided) THEN
-					increment collisions
-					set collided flag to TRUE for both bodies
-				ELSE
-					set collided flag to FALSE for both bodies
-				END IF
-			END FOR
-		END FOR
-
-		==========================
-*/
-
-    // this is the call to the library version of this function. Remove once you have written your own code.
-	//simulateGravityLib(data);
 	gtime += timeStep ;
 	glutPostRedisplay();
 	glutTimerFunc ( TIMER, simulateGravity, 0 ) ;
@@ -316,7 +247,6 @@ int loadUniverse ( Universe *u, char filename[]){
 	double  bodData[11];
 	FILE* univ;
 	arrayZero(bodData);
-	printf("TEST");
 	univ = fopen("universe.txt","r");
 	uni.G = DEFAULT_G;
 	if (univ == NULL)
@@ -368,6 +298,7 @@ int loadUniverse ( Universe *u, char filename[]){
 void initialise(void)
 {
    	int i = 0,j = 0;
+   	double res[DIM], iniForce[DIM];
 	uni.numCollisions = 0;
 	gtime = 0;
 	year = 0;
@@ -376,48 +307,62 @@ void initialise(void)
 		uni.G = DEFAULT_G;
 		for(i=0;i<uni.numBodies;i++)
 			{
-            uni.bodies[i].mass = ((float)rand()/(float)RAND_MAX)*10+.1;
-            uni.bodies[i].radius = (uni.bodies[i].mass/1000);
+			uni.bodies[i].mass = ((float)rand()/(float)RAND_MAX)*10+.1;
+            uni.bodies[i].radius = (uni.bodies[i].mass/100);
             for(j=0;j<DIM;j++)
                 {
-                uni.bodies[i].position[j] = (((float)rand()/(float)RAND_MAX) -.5)*2;
                 uni.bodies[i].colour[j] = ((float)rand()/(float)RAND_MAX)+.1;
                 }
+            uni.bodies[i].position[0] = .25+(.25*i);//((float)rand()/(float)RAND_MAX) -.5)*2;
+            uni.bodies[i].position[2] = .25+(.25*i);
+            uni.bodies[i].position[1] = 0;
             genworld(i);
-			//printf("%d: %lf %lf %lf %lf %lf\n",i,uni.bodies[i].mass,uni.bodies[i].radius,uni.bodies[i].colour[0],uni.bodies[i].colour[1],uni.bodies[i].colour[2]);
 			}
 
-            uni.bodies[uni.numBodies+1].mass = 100;
-            uni.bodies[uni.numBodies+1].radius = .1;
+            uni.bodies[0].mass = 2000;
+            uni.bodies[0].radius = (uni.bodies[0].mass/10000);
             for(j=0;j<DIM;j++)
                 {
-                uni.bodies[uni.numBodies+1].position[j] = 0;
-                uni.bodies[uni.numBodies+1].colour[j] = 0;
+                uni.bodies[0].position[j] = 0;
+                uni.bodies[0].colour[j] = 1;
                 }
-            uni.bodies[uni.numBodies+1].colour[0] = 1;
-            uni.bodies[uni.numBodies+1].colour[1] = 1;
-            uni.bodies[uni.numBodies+1].type = 8;
-            sscanf("Sun","%s",uni.bodies[uni.numBodies+1].typnm);
-            uni.bodies[uni.numBodies+1].atm = -1;
-            uni.bodies[uni.numBodies+1].savage = -1;
-            uni.bodies[uni.numBodies+1].enviro = 1000;
-            uni.bodies[uni.numBodies+1].pop = 0;
-            uni.bodies[uni.numBodies+1].maxpop = 0;
-            uni.numBodies += 1;
-            }
+            sscanf("Sun","%s",uni.bodies[0].typnm);
+
+            for(i=1;i<uni.numBodies;i++)
+                {
+                arrayZero(res);
+                arrayZero(iniForce);
+                uni.bodies[0].mass += (uni.bodies[i].mass*4); //ensures Star mass is much greater than every planets combined
+                /*calculateGravity(uni.bodies[i].mass,uni.bodies[0].mass,uni.bodies[i].position,uni.bodies[0].position,uni.G,res);
+
+                uni.bodies[i].accel[0] = (res[0]/uni.bodies[i].mass);
+                uni.bodies[i].accel[2] = (res[2]/uni.bodies[i].mass);
+                uni.bodies[i].accel[0] = uni.bodies[i].accel[0]*cos(90)-uni.bodies[i].accel[2]*sin(90);
+                uni.bodies[i].accel[2] = uni.bodies[i].accel[0]*sin(90)+uni.bodies[i].accel[2]*cos(90);
+                for(j=0;j<DIM;j++)
+                    {
+                    uni.bodies[i].position[j] += (uni.bodies[i].velocity[j]*timeStep)+(.5*uni.bodies[i].accel[j]*(timeStep*timeStep));
+                    uni.bodies[i].velocity[j] += (uni.bodies[i].accel[j]*timeStep);
+                    }
+
+                printf("Test\n");*/
+                }
+
+        }
+    }
 
 	 //initialiseLib() ;
 
-
-}
-
 void genworld (int num)
     {
+
     uni.bodies[num].type = rand() % 7;
     switch(uni.bodies[num].type)
         {
+
         case 0: //arboreal
             {
+            printf("TEST Arb \n");
             sscanf("Arboreal","%s",uni.bodies[num].typnm);
             uni.bodies[num].atm = rand() % 3;
             uni.bodies[num].enviro = rand() % 3;
@@ -738,4 +683,6 @@ void arrayPrint(double a[DIM])
 }
 
 
-```
+
+
+
