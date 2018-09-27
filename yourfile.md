@@ -1,3 +1,5 @@
+``` c
+
 /*  For linux:  -lglut -lGL -lGLU -lm */
 /*  For windows:  -lfreeglut -lopengl32 -lglu32 -lm */
 
