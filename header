@@ -1,0 +1,74 @@
+```c
+
+
+#ifndef GRAVITY_7
+#define GRAVITY_7
+
+#define DIM 3
+#define NUM_BODIES 4000
+#define MAX_BODIES 10000
+#define C_REST 0.8
+#define TRACEN 1000
+#define DEFAULT_G 0.5
+
+#define TIMER 20
+
+/* Define the Window dimensions */
+#define WIN_WIDTH	800	/* WINDOW Width in pixels */
+#define WIN_HEIGHT	800	/* WINDOW Height in pixels */
+
+/* Define the key to exit the system */
+#define ESC	27
+
+typedef struct {
+	double mass;
+	double position[DIM];
+	double velocity[DIM];
+	double accel[DIM];
+	double radius;
+	float colour[3];
+	double pop;
+	double maxpop;
+	double popgrow;
+	int atm;
+	char name[20];
+	char typnm[20];
+	int type;
+	int savage;
+	int enviro;
+	double ang;
+	double dist;
+} Object;
+
+typedef struct {
+    int numBodies ;
+    Object bodies[MAX_BODIES] ;
+    double trace[MAX_BODIES][TRACEN][DIM] ;
+    long numCollisions ;
+    int collided[MAX_BODIES];  // "status" array, indicating whether a body has already collided or not
+    double G ;
+    int fixed ; // determines whether universe was read from file (1) or random (0)
+} Universe ;
+
+void myDrawLib(void);
+void myKeyLib(unsigned char key, int x, int y);
+void initialiseLib(void);
+void simulateGravityLib(int data);
+void computeCollisionLib(Object *a, Object *b);
+void calculateGravityLib ( double m1, double m2, double pos1[DIM], double pos2[DIM], double G, double result[DIM]);
+int loadUniverseLib ( Universe *u, char filename[]) ;
+void arrayZeroLib(double a[DIM]);
+double vectorDotLib(double a[DIM], double b[DIM]);
+
+// Prototypes from main program
+void arrayZero(double a[DIM]);
+double vectorDot(double a[DIM], double b[DIM]);
+void initialise(void);
+void calculateGravity ( double m1, double m2, double pos1[DIM], double pos2[DIM], double G, double result[DIM]);
+void simulateGravity(int data);
+void computeCollision(Object *b1, Object *b2);
+int loadUniverse ( Universe *u, char filename[]) ;
+
+
+
+#endif
