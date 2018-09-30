@@ -44,7 +44,7 @@ double zoom, gtime, year=0,tcount = 0;  // zoom factor and global time
 float azi = 0, alt = 0;  // azimuth and altitude
 const float dstep = 2;  // step-size for the azimuth and altitude
 const double reps = 0.01;  // radius of each object
-int traceon = 1, showstats = 1;  // flag variable for indicating whether trajectory trace is on or not
+int traceon = 1, showstats = 1, click = 0;  // flag variable for indicating whether trajectory trace is on or not
 
 
 // Universe, containing everything
@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
         uni.fixed = 1 ;
     } else {
         uni.fixed = 0 ;
-        uni.numBodies = 2 ;
+        uni.numBodies = 7 ;
     }
 
     initialise();  // initialise simulation
@@ -182,7 +182,6 @@ void simulateGravity(int data)
 		uni.bodies[i].position[0] = cos(uni.bodies[i].ang) * uni.bodies[i].dist;
 		uni.bodies[i].position[1] = sin(uni.bodies[i].ang) * uni.bodies[i].dist;
 		uni.bodies[i].ang += ((1-uni.bodies[i].dist/5)+(uni.bodies[i].mass/1000))/100;
-		printf("An: %lf\n",uni.bodies[i].ang);
 		if (uni.bodies[i].ang >=6.28)
 			{
 			uni.bodies[i].ang -= 6.28;
@@ -306,6 +305,7 @@ void initialise(void)
 	year = 0;
 	if (uni.fixed == 0)
 		{
+		uni.buttons[0].selected = 1;
 		uni.G = DEFAULT_G;
 		for(i=0;i<uni.numBodies;i++)
 			{
@@ -315,7 +315,7 @@ void initialise(void)
                 {
                 uni.bodies[i].colour[j] = ((float)rand()/(float)RAND_MAX)+.1;
                 }
-            uni.bodies[i].position[0] = .25+(.25*i);//((float)rand()/(float)RAND_MAX) -.5)*2;
+            uni.bodies[i].position[0] = .25+(.25*i);
             uni.bodies[i].position[1] = .25+(.25*i);
             uni.bodies[i].position[2] = 0;
             uni.bodies[i].dist = 0;
@@ -325,7 +325,6 @@ void initialise(void)
 				uni.bodies[i].dist += pow(uni.bodies[i].position[j],2);
 				}
 			uni.bodies[i].dist = sqrt(uni.bodies[i].dist);
-            printf("DIST %lf\n",uni.bodies[i].dist);
             uni.bodies[i].position[1] = 0;
             genworld(i);
 			}
@@ -348,26 +347,12 @@ void initialise(void)
                 {
                 arrayZero(res);
                 arrayZero(iniForce);
-                //calculateGravity(uni.bodies[i].mass,uni.bodies[0].mass,uni.bodies[i].position,uni.bodies[0].position,uni.G,res);
-
 				for(j=0;j<DIM;j++)
 					{
 					dist += pow(uni.bodies[i].position[j]-uni.bodies[0].position[j],2);
 					}
 				dist = sqrt(dist)/2; //gives us the radius of the orbit
-				uni.bodies[i].velocity[2] = (sqrt((uni.G*uni.bodies[0].mass)));//dist))/uni.bodies[i].mass;
-				//uni.bodies[i].velocity[2] += (uni.bodies[i].accel[2]*timeStep);
-				/*
-                uni.bodies[i].accel[0] = (res[0]/uni.bodies[i].mass);
-                uni.bodies[i].accel[1] = (res[1]/uni.bodies[i].mass);
-                uni.bodies[i].accel[0] = uni.bodies[i].accel[0]*cos(90)-uni.bodies[i].accel[1]*sin(90);
-                uni.bodies[i].accel[1] = uni.bodies[i].accel[1]*sin(90)+uni.bodies[i].accel[0]*cos(90);
-                for(j=0;j<1;j++)
-                    {
-                    uni.bodies[i].position[j] += (uni.bodies[i].velocity[j]*timeStep)+(.5*uni.bodies[i].accel[j]*(timeStep*timeStep));
-                    uni.bodies[i].velocity[j] += (uni.bodies[i].accel[j]*timeStep);
-                    }*/
-
+				uni.bodies[i].velocity[2] = (sqrt((uni.G*uni.bodies[0].mass)));
                 printf("Test\n");
                 }
 
@@ -464,7 +449,7 @@ void genworld (int num)
 void myKey(unsigned char key, int x, int y)
 {
 	//myKeyLib(key, x, y);
-
+	int i=0;
 	switch(key)
 		{
 		case 'a':
@@ -531,8 +516,8 @@ void myKey(unsigned char key, int x, int y)
 			{
 			if (uni.fixed == 0 && uni.numBodies < 1024)
 				{
-				uni.numBodies *= 2;
-				initialise();
+				//uni.numBodies *= 2;
+				//initialise();
 				}
 			break;
 			}
@@ -540,8 +525,34 @@ void myKey(unsigned char key, int x, int y)
 			{
 			if (uni.fixed == 0 && uni.numBodies > 2)
 				{
-				uni.numBodies /= 2;
-				initialise();
+				//uni.numBodies /= 2;
+				//initialise();
+				}
+			break;
+			}
+		case 'o':
+			{
+			for(i=1;i<6;i++)
+				{
+				if (uni.buttons[i].selected == 1 && click == 0)
+					{
+					uni.buttons[i].selected = 0;
+					uni.buttons[i-1].selected = 1;
+					click = 2;
+					}
+				}
+			break;
+			}
+		case 'l':
+			{
+			for(i=0;i<5;i++)
+				{
+				if (uni.buttons[i].selected == 1 && click == 0)
+					{
+					uni.buttons[i].selected = 0;
+					uni.buttons[i+1].selected = 1;
+					click = 2;
+					}
 				}
 			break;
 			}
@@ -609,6 +620,10 @@ void myDraw(void)
         {
         showstats += .1;
         }
+	if (click > 0)
+		{
+		click -= .1;
+		}
 
 
     char buffer[256];
@@ -617,61 +632,74 @@ void myDraw(void)
     glLoadIdentity();
     glPushMatrix();
     glColor3f(1,1,1);
-    glRasterPos2f(-0.99,-0.99);
-    sprintf(buffer,"Number of collisions: %d",uni.numCollisions);
-    glutBitmapString(GLUT_BITMAP_8_BY_13,buffer);
-
     glRasterPos2f(-0.99,-0.75);
-    sprintf(buffer,"Number of bodies (-v/+b): %d",uni.numBodies);
+    //sprintf(buffer,"Number of collisions: %d",uni.numCollisions);
+    sprintf(buffer,"o and l to navigate planets");
     glutBitmapString(GLUT_BITMAP_8_BY_13,buffer);
 
     glRasterPos2f(-0.99,-0.70);
-    sprintf(buffer,"Azimuth (-a/+d): %f Altitude (-s/+w): %f Zoom (-z/+x): %lf",azi, alt, zoom);
+    sprintf(buffer,"Number of bodies (-v/+b): %d",uni.numBodies);
     glutBitmapString(GLUT_BITMAP_8_BY_13,buffer);
 
     glRasterPos2f(-0.99,-0.65);
+    sprintf(buffer,"Azimuth (-a/+d): %.0f Altitude (-s/+w): %.0f Zoom (-z/+x): %lf",azi, alt, zoom);
+    glutBitmapString(GLUT_BITMAP_8_BY_13,buffer);
+
+    glRasterPos2f(-0.99,-0.60);
     sprintf(buffer,"Year: %.0lf",year);
     glutBitmapString(GLUT_BITMAP_8_BY_13,buffer);
+
+    for(i=0;i<6;i++)
+		{
+		glColor3f(1,1,1);
+		if (uni.buttons[i].selected == 1)
+			{
+			glColor3f(0,0,1);
+			}
+		glRasterPos2f(-0.99,.9-(.1*i));
+		sprintf(buffer,"Planet %d",i);
+		glutBitmapString(GLUT_BITMAP_8_BY_13,buffer);
+		}
+	glColor3f(1,1,1);
+
+
+    for(i=0;i<6;i++)
+        {
+		glColor3f(1,1,1);
+		if (uni.buttons[i].selected == 1)
+			{
+			glRasterPos2f(0.65,.75);
+            glColor3f(1,1,1);
+			sprintf(buffer,"Planet %d\nPop: %.0lfk/%.0lfk\nType: %s\nSavage: %d\nAtm: %d\nEnviro: %d\nDiameter: %.0lfkm",i+1,uni.bodies[i+1].pop,uni.bodies[i+1].maxpop,uni.bodies[i+1].typnm,uni.bodies[i+1].savage,uni.bodies[i+1].atm,uni.bodies[i+1].enviro,uni.bodies[i+1].radius*2*100000);
+			glutBitmapString(GLUT_BITMAP_8_BY_13,buffer);
+
+			}
+		}
 
     glPopMatrix();
 
     glRotatef(azi,0,1,0);
     glRotatef(alt,1,0,0);
 
-    for(i=0;i<uni.numBodies;i++)
-        {
-        if (traceon ==1)
-            {
-            //NOTHIIIIIIIING
-            }
-        if (showstats == 1)
-            {
-            glPushMatrix();
-                glRasterPos3f(uni.bodies[i].position[0] * zoom +uni.bodies[i].radius + 0.03, uni.bodies[i].position[1] * zoom+uni.bodies[i].radius  + 0.03, uni.bodies[i].position[2] * zoom+uni.bodies[i].radius  + 0.03);
-                glColor3f(uni.bodies[i].colour[0] + 0.2, uni.bodies[i].colour[1] + 0.2, uni.bodies[i].colour[2] + 0.2);
-                if (i > 0)
-					{
-					sprintf(buffer,"Pop: %.0lfk/%.0lfk\nType: %s\nSavage: %d\nAtm: %d\nEnviro: %d\nDiameter: %.0lfkm",uni.bodies[i].pop,uni.bodies[i].maxpop,uni.bodies[i].typnm,uni.bodies[i].savage,uni.bodies[i].atm,uni.bodies[i].enviro,uni.bodies[i].radius*2*100000);
-					}
-				else
-					{
-					sprintf(buffer,"Sun\nUninhabitable\n");
-					}
-                glutBitmapString(GLUT_BITMAP_8_BY_13,buffer);
-            glPopMatrix();
-            }
+	for(i=0;i<uni.numBodies;i++)
+		{
         glPushMatrix();
         glTranslatef(uni.bodies[i].position[0] *zoom,uni.bodies[i].position[1] *zoom,uni.bodies[i].position[2] *zoom);
         glColor3f(uni.bodies[i].colour[0],uni.bodies[i].colour[1],uni.bodies[i].colour[2]);
         glutSolidSphere(uni.bodies[i].radius*zoom,10,10);
+        if (uni.buttons[i-1].selected == 1)
+			{
+			glColor3f(0,0,1);
+			glutWireSphere((uni.bodies[i].radius)*1.25,4,4);
+			}
         glPopMatrix();
         }
 
 
 
-    glPushMatrix();
-    glColor3f(1,1,1);
-    glutWireCube(zoom);
+    //glPushMatrix();
+    //glColor3f(1,1,1);
+    //glutWireCube(zoom);
     glBegin(GL_LINES);
         glColor3f(1,0,0);
         glVertex3f(-0.5*zoom,-0.5*zoom,-0.5*zoom);
