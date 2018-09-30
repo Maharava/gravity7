@@ -1,5 +1,4 @@
 ``` c
-
 /*  For linux:  -lglut -lGL -lGLU -lm */
 /*  For windows:  -lfreeglut -lopengl32 -lglu32 -lm */
 
@@ -172,23 +171,30 @@ void calculateGravity ( double m1, double m2, double pos1[DIM], double pos2[DIM]
 		{
 		result[i] = distVect[i]*gForce;
 		}
-
-    //used for showstats
-
-    if (showstats > 1)
-        {
-        showstats -= .1;
-        }
-
-    if (showstats < 0)
-        {
-        showstats += .1;
-        }
   // calculateGravityLib ( m1, m2, pos1, pos2, G, result);
 }
 
-
 void simulateGravity(int data)
+	{
+	int j=0,i=0;
+	for(i=1;i<uni.numBodies;i++)
+		{
+		uni.bodies[i].position[0] = cos(uni.bodies[i].ang) * uni.bodies[i].dist;
+		uni.bodies[i].position[1] = sin(uni.bodies[i].ang) * uni.bodies[i].dist;
+		uni.bodies[i].ang += ((1-uni.bodies[i].dist/5)+(uni.bodies[i].mass/1000))/100;
+		printf("An: %lf\n",uni.bodies[i].ang);
+		if (uni.bodies[i].ang >=6.28)
+			{
+			uni.bodies[i].ang -= 6.28;
+			}
+		}
+	gtime += timeStep ;
+	glutPostRedisplay();
+	glutTimerFunc ( TIMER, simulateGravity, 0 ) ;
+	}
+
+
+void simulateGravityTrue(int data)
 {
 	int j=0,curBody=0,othBody=0;
 	int i = 0; //counter variable
@@ -233,10 +239,6 @@ void simulateGravity(int data)
 	glutTimerFunc ( TIMER, simulateGravity, 0 ) ;
 }
 
-/* END OF WEEK 2 FUNCTIONS */
-
-
-/* WEEK 3 FUNCTIONS */
 
 int loadUniverse ( Universe *u, char filename[]){
 
@@ -297,7 +299,7 @@ int loadUniverse ( Universe *u, char filename[]){
 // initialise bodies at random locations within the "world of view"
 void initialise(void)
 {
-   	int i = 0,j = 0;
+   	int i = 0,j = 0, dist=0;
    	double res[DIM], iniForce[DIM];
 	uni.numCollisions = 0;
 	gtime = 0;
@@ -314,7 +316,16 @@ void initialise(void)
                 uni.bodies[i].colour[j] = ((float)rand()/(float)RAND_MAX)+.1;
                 }
             uni.bodies[i].position[0] = .25+(.25*i);//((float)rand()/(float)RAND_MAX) -.5)*2;
-            uni.bodies[i].position[2] = .25+(.25*i);
+            uni.bodies[i].position[1] = .25+(.25*i);
+            uni.bodies[i].position[2] = 0;
+            uni.bodies[i].dist = 0;
+            uni.bodies[i].ang = rand() % 6;
+            for(j=0;j<DIM;j++)
+				{
+				uni.bodies[i].dist += pow(uni.bodies[i].position[j],2);
+				}
+			uni.bodies[i].dist = sqrt(uni.bodies[i].dist);
+            printf("DIST %lf\n",uni.bodies[i].dist);
             uni.bodies[i].position[1] = 0;
             genworld(i);
 			}
@@ -328,24 +339,36 @@ void initialise(void)
                 }
             sscanf("Sun","%s",uni.bodies[0].typnm);
 
+			for(i=1;i<uni.numBodies;i++)
+				{
+				uni.bodies[0].mass += (uni.bodies[i].mass*1000); //ensures Star mass is much greater than every planets combined
+				}
+
             for(i=1;i<uni.numBodies;i++)
                 {
                 arrayZero(res);
                 arrayZero(iniForce);
-                uni.bodies[0].mass += (uni.bodies[i].mass*4); //ensures Star mass is much greater than every planets combined
-                /*calculateGravity(uni.bodies[i].mass,uni.bodies[0].mass,uni.bodies[i].position,uni.bodies[0].position,uni.G,res);
+                //calculateGravity(uni.bodies[i].mass,uni.bodies[0].mass,uni.bodies[i].position,uni.bodies[0].position,uni.G,res);
 
+				for(j=0;j<DIM;j++)
+					{
+					dist += pow(uni.bodies[i].position[j]-uni.bodies[0].position[j],2);
+					}
+				dist = sqrt(dist)/2; //gives us the radius of the orbit
+				uni.bodies[i].velocity[2] = (sqrt((uni.G*uni.bodies[0].mass)));//dist))/uni.bodies[i].mass;
+				//uni.bodies[i].velocity[2] += (uni.bodies[i].accel[2]*timeStep);
+				/*
                 uni.bodies[i].accel[0] = (res[0]/uni.bodies[i].mass);
-                uni.bodies[i].accel[2] = (res[2]/uni.bodies[i].mass);
-                uni.bodies[i].accel[0] = uni.bodies[i].accel[0]*cos(90)-uni.bodies[i].accel[2]*sin(90);
-                uni.bodies[i].accel[2] = uni.bodies[i].accel[0]*sin(90)+uni.bodies[i].accel[2]*cos(90);
-                for(j=0;j<DIM;j++)
+                uni.bodies[i].accel[1] = (res[1]/uni.bodies[i].mass);
+                uni.bodies[i].accel[0] = uni.bodies[i].accel[0]*cos(90)-uni.bodies[i].accel[1]*sin(90);
+                uni.bodies[i].accel[1] = uni.bodies[i].accel[1]*sin(90)+uni.bodies[i].accel[0]*cos(90);
+                for(j=0;j<1;j++)
                     {
                     uni.bodies[i].position[j] += (uni.bodies[i].velocity[j]*timeStep)+(.5*uni.bodies[i].accel[j]*(timeStep*timeStep));
                     uni.bodies[i].velocity[j] += (uni.bodies[i].accel[j]*timeStep);
-                    }
+                    }*/
 
-                printf("Test\n");*/
+                printf("Test\n");
                 }
 
         }
@@ -577,7 +600,16 @@ void myDraw(void)
 
 	/* Put your drawing code in here */
 
-	//myDrawLib();
+    if (showstats > 1)
+        {
+        showstats -= .1;
+        }
+
+    if (showstats < 0)
+        {
+        showstats += .1;
+        }
+
 
     char buffer[256];
     int i = 0, bodyNum=0;
@@ -617,7 +649,14 @@ void myDraw(void)
             glPushMatrix();
                 glRasterPos3f(uni.bodies[i].position[0] * zoom +uni.bodies[i].radius + 0.03, uni.bodies[i].position[1] * zoom+uni.bodies[i].radius  + 0.03, uni.bodies[i].position[2] * zoom+uni.bodies[i].radius  + 0.03);
                 glColor3f(uni.bodies[i].colour[0] + 0.2, uni.bodies[i].colour[1] + 0.2, uni.bodies[i].colour[2] + 0.2);
-                sprintf(buffer,"Pop: %.0lfk/%.0lfk\nType: %s\nSavage: %d\nAtm: %d\nEnviro: %d\nDiameter: %.0lfkm",uni.bodies[i].pop,uni.bodies[i].maxpop,uni.bodies[i].typnm,uni.bodies[i].savage,uni.bodies[i].atm,uni.bodies[i].enviro,uni.bodies[i].radius*2*100000);
+                if (i > 0)
+					{
+					sprintf(buffer,"Pop: %.0lfk/%.0lfk\nType: %s\nSavage: %d\nAtm: %d\nEnviro: %d\nDiameter: %.0lfkm",uni.bodies[i].pop,uni.bodies[i].maxpop,uni.bodies[i].typnm,uni.bodies[i].savage,uni.bodies[i].atm,uni.bodies[i].enviro,uni.bodies[i].radius*2*100000);
+					}
+				else
+					{
+					sprintf(buffer,"Sun\nUninhabitable\n");
+					}
                 glutBitmapString(GLUT_BITMAP_8_BY_13,buffer);
             glPopMatrix();
             }
