@@ -1,3 +1,5 @@
 Moons
 
 If we store moons in their own structure, containing colour, position, homeworld, angle, anglechange, distance to homeworld, mass and radius, we can then simply draw them the same way as we draw the bodies array. We would use simulateGravity to move them as well, just moving their circle according to their homeworlds position, not the suns. To create them, in initialise we would run through numBodies and for each body decide how many moons it had. We would then add this number of moons to the moon array, define their stats and tell them what their homeworld is.
+
+Ships
