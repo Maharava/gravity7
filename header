@@ -1,6 +1,5 @@
 ```c
 
-
 #ifndef GRAVITY_7
 #define GRAVITY_7
 
@@ -40,6 +39,12 @@ typedef struct {
 	double dist;
 } Object;
 
+typedef struct{
+int plan;
+int selected;
+
+} Button;
+
 typedef struct {
     int numBodies ;
     Object bodies[MAX_BODIES] ;
@@ -47,6 +52,7 @@ typedef struct {
     long numCollisions ;
     int collided[MAX_BODIES];  // "status" array, indicating whether a body has already collided or not
     double G ;
+    Button buttons[6];
     int fixed ; // determines whether universe was read from file (1) or random (0)
 } Universe ;
 
