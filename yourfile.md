@@ -1,4 +1,4 @@
-``` c
+```c
 /*  For linux:  -lglut -lGL -lGLU -lm */
 /*  For windows:  -lfreeglut -lopengl32 -lglu32 -lm */
 
@@ -39,13 +39,13 @@ void myKey(unsigned char key,int x, int y);
 
 #define TIMER 20  // number of milliseconds for each time step (for glutTimerFunc)
 
-const double timeStep = 0.001;  // in seconds, the rate at which things happen
-double zoom, gtime, year=0,tcount = 0;  // zoom factor. global time, current year and a time counter for the year
+const double timeStep = 0.001;  // in seconds
+double zoom, gtime, year=0,tcount = 0;  // zoom factor and global time
 float azi = 0, alt = 0;  // azimuth and altitude
 const float dstep = 2;  // step-size for the azimuth and altitude
 const double reps = 0.01;  // radius of each object
-int traceon = 1, ;  // flag variable for indicating whether trajectory trace is on or not
-int click = 0; //clicker varuiable to ensure things don't happen all at once
+int traceon = 1, showstats = 1, click = 0, gravtype = 0;  // flag variable for indicating whether trajectory trace is on or not
+
 
 // Universe, containing everything
 Universe uni ;
@@ -66,7 +66,17 @@ int main(int argc, char *argv[])
 	glutDisplayFunc(myDraw);  		// register function for drawing event
 	glutKeyboardFunc(myKey);		// register function for keyboard event
 	glutTimerFunc(TIMER, simulateGravity, 0);
-	
+
+	if (gravtype == 0)
+		{
+		glutTimerFunc(TIMER, simulateGravity, 0);
+		}
+	else
+	if (gravtype == 1)
+		{
+		//glutTimerFunc(TIMER,simulateGravityNewt,0);
+		}
+
 	zoom = 1;  // initialise zoom to 1
 	// set collision flags for each body to 0 (i.e. no collision)
 	for (i = 0; i < MAX_BODIES; i++)
@@ -124,6 +134,7 @@ int i = 0; //counter variable
 	return (dotProduct);
 
 }
+
 //Increases tcount until it's hit the year point (>=5), at which point populations are updated
 //also updates the planets terrain descriptions in case of changes (changes not implemented)
 void newYear(void)
@@ -149,14 +160,14 @@ void newYear(void)
             	}
         tcount = 0;
         }
-    }
 
-void calculateGravity ( double m1, double m2, double pos1[DIM], double pos2[DIM], double G, double result[DIM])
-	{
+void calculateGravity ( double m1, double m2, double pos1[DIM], double pos2[DIM], double G, double result[DIM]){
+
+printf("CalGrav\n");
 	double distVect[DIM], distMag=0, gForce=0;
 	int i = 0; //counter variable
-	arrayZero(result);
-	arrayZero(distVect);
+    arrayZero(result);
+    arrayZero(distVect);
 	for(i=0;i<DIM;i++)
 		{
 		distVect[i] = pos2[i]-pos1[i];
@@ -207,6 +218,7 @@ void simulateGravity(int data)
 //original, newtonian style gravity
 void simulateGravityNewt(int data)
 {
+printf("SimGravNew\n");
 	int j=0,i=0,curBody=0,othBody=0;
 	double  netForce[DIM], result[DIM];
 	arrayZero(netForce);
@@ -217,7 +229,7 @@ void simulateGravityNewt(int data)
 			{
 			if (othBody != curBody)
 				{
-calculateGravity(uni.bodies[curBody].mass,uni.bodies[othBody].mass,uni.bodies[curBody].position,uni.bodies[othBody].position,uni.G,result);
+				calculateGravity(uni.bodies[curBody].mass,uni.bodies[othBody].mass,uni.bodies[curBody].position,uni.bodies[othBody].position,uni.G,result);
 				for(j=0;j<DIM;j++)
 					{
 					netForce[j]+=result[j];
@@ -331,7 +343,7 @@ void initialise(void)
 		for(i=0;i<uni.numBodies;i++)
 			{
 			uni.bodies[i].mass = ((float)rand()/(float)RAND_MAX)*20+.1;
-			uni.bodies[i].radius = (uni.bodies[i].mass/100); //gives the planets mass and radius
+			uni.bodies[i].radius = (uni.bodies[i].mass/200); //gives the planets mass and radius
 			for(j=0;j<DIM;j++)
 		                {
 		                uni.bodies[i].colour[j] = ((float)rand()/(float)RAND_MAX)+.1; //sets the planets colour
@@ -342,12 +354,12 @@ void initialise(void)
 			uni.bodies[i].dist = 0;
 			uni.bodies[i].ang = rand() % 6; //ensures that all planets don't start in line with each other
             		for(j=0;j<DIM;j++)
-				{
-				uni.bodies[i].dist += pow(uni.bodies[i].position[j],2); //works out the distance between the planet and the sun
-				}
-			uni.bodies[i].dist = sqrt(uni.bodies[i].dist);
+						{
+						uni.bodies[i].dist += pow(uni.bodies[i].position[j],2); //works out the distance between the planet and the sun
+						}
+					uni.bodies[i].dist = sqrt(uni.bodies[i].dist);
             		genworld(i); //generates the worlds other stats
-			}
+					}
 	uni.bodies[0].mass = 2000; //sets the suns base mass
 	uni.bodies[0].radius = (uni.bodies[0].mass/5000); //sets the suns radius
 	for(j=0;j<DIM;j++)
@@ -381,6 +393,7 @@ void initialise(void)
     }
 
 	 //initialiseLib() ;
+
 
 //This generates the worlds terrain data
 void genworld (int num)
@@ -470,6 +483,7 @@ void genworld (int num)
 	nameEnviro(num,uni.bodies[num].envNm); //this works out the descripors for the planets terrain types
 	}
 
+
 //generates moons for each planet
 void genMoons (num)
 	{
@@ -485,7 +499,7 @@ void genMoons (num)
 			uni.moons[uni.numMoons].position[2] = uni.bodies[num].position[2];
 			uni.moons[uni.numMoons].ang = rand()%6;
 			uni.moons[uni.numMoons].mass = ((float)rand()/(float)RAND_MAX)*2+.1;
-			uni.moons[uni.numMoons].radius = (uni.moons[uni.numMoons].mass/100); //sets the starting angle, random mass, and radius accordingly
+			uni.moons[uni.numMoons].radius = (uni.moons[uni.numMoons].mass/75); //sets the starting angle, random mass, and radius accordingly
 			uni.moons[uni.numMoons].home = num; //sets the homeworld for the moon
 			for(j=0;j<DIM;j++)
 				{
@@ -506,7 +520,6 @@ void genMoons (num)
 
 void myKey(unsigned char key, int x, int y)
 {
-printf("Keys\n");
 	//myKeyLib(key, x, y);
 	int i=0,j=0;
 	switch(key)
@@ -642,6 +655,7 @@ void computeCollision(Object *a, Object *b)
 }
 
 
+
 void myDraw(void)
 {
 	/* clear the screen */
@@ -710,7 +724,7 @@ void myDraw(void)
         if (uni.buttons[i-1].selected == 1)
 			{
 			glColor3f(0,0,1);
-			glutWireSphere((uni.bodies[i].radius)*1.25,4,4);
+			glutWireSphere((uni.bodies[i].radius)*1.15,4,4);
 			}
         glPopMatrix();
         }
@@ -749,7 +763,7 @@ void myDraw(void)
 void nameSav (int plan, char savNm[20])
 	{
 	sscanf("Peaceful","%s",savNm);
-	
+
 	if (uni.bodies[plan].savage >= 2)
 		{
 		sscanf("Earthlike","%s",savNm);
@@ -761,7 +775,7 @@ void nameSav (int plan, char savNm[20])
 	if (uni.bodies[plan].savage >= 5)
 		{
 		sscanf("Dangerous","%s",savNm);
-		}		
+		}
 	if (uni.bodies[plan].savage >= 7)
 		{
 		sscanf("Predatory","%s",savNm);
