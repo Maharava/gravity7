@@ -26,6 +26,19 @@ typedef struct {
 	double accel[DIM];
 	double radius;
 	float colour[3];
+	char name[20];
+	double ang;
+	double dist;
+	int home;
+} Moon;
+
+typedef struct {
+	double mass;
+	double position[DIM];
+	double velocity[DIM];
+	double accel[DIM];
+	double radius;
+	float colour[3];
 	double pop;
 	double maxpop;
 	double popgrow;
@@ -35,19 +48,24 @@ typedef struct {
 	int type;
 	int savage;
 	int enviro;
+	int moonnum;
 	double ang;
 	double dist;
+	char atmNm[20];
+	char savNm[20];
+	char envNm[20];
 } Object;
 
 typedef struct{
 int plan;
 int selected;
-
 } Button;
 
 typedef struct {
     int numBodies ;
     Object bodies[MAX_BODIES] ;
+    Moon moons[MAX_BODIES];
+    int numMoons;
     double trace[MAX_BODIES][TRACEN][DIM] ;
     long numCollisions ;
     int collided[MAX_BODIES];  // "status" array, indicating whether a body has already collided or not
@@ -65,6 +83,9 @@ void calculateGravityLib ( double m1, double m2, double pos1[DIM], double pos2[D
 int loadUniverseLib ( Universe *u, char filename[]) ;
 void arrayZeroLib(double a[DIM]);
 double vectorDotLib(double a[DIM], double b[DIM]);
+void nameAtmo(int plan,char atmNm[20]);
+void nameEnviro(int plan,char envNm[20]);
+void nameSav(int plan, char savNm[20]);
 
 // Prototypes from main program
 void arrayZero(double a[DIM]);
@@ -72,6 +93,7 @@ double vectorDot(double a[DIM], double b[DIM]);
 void initialise(void);
 void calculateGravity ( double m1, double m2, double pos1[DIM], double pos2[DIM], double G, double result[DIM]);
 void simulateGravity(int data);
+void simulateGravityNewt(int data);
 void computeCollision(Object *b1, Object *b2);
 int loadUniverse ( Universe *u, char filename[]) ;
 
