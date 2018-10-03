@@ -1,6 +1,5 @@
+
 ```c
-
-
 #ifndef GRAVITY_7
 #define GRAVITY_7
 
@@ -27,6 +26,19 @@ typedef struct {
 	double accel[DIM];
 	double radius;
 	float colour[3];
+	char name[20];
+	double ang;
+	double dist;
+	int home;
+} Moon;
+
+typedef struct {
+	double mass;
+	double position[DIM];
+	double velocity[DIM];
+	double accel[DIM];
+	double radius;
+	float colour[3];
 	double pop;//population
 	double maxpop;//maximum population on planet
 	double popgrow;//yearly growth of population based on many factors
@@ -36,12 +48,18 @@ typedef struct {
 	int type;//planet type, water, ice etc.
 	int savage;//savagery of planet
 	int enviro;//environment of planet
+	int moonnum; //the number of moons around this planet
 	double ang;//angle for planet-sun orbit function
 	double dist;//distant from sun which planets orbit
 	char atmNm[10];//atmosphere rank name
 	char savNm[20];//savagery rank name
 	char envNm[10];//enviro. rank name
 } Object;
+
+
+
+
+
 
 typedef struct{
 int plan;//planet number this menu button will link to
@@ -51,6 +69,8 @@ int selected;
 typedef struct {
     int numBodies ;
     Object bodies[MAX_BODIES] ;
+    Moon moons[MAX_BODIES];
+    int numMoons;
     double trace[MAX_BODIES][TRACEN][DIM] ;
     long numCollisions ;
     int collided[MAX_BODIES];  // "status" array, indicating whether a body has already collided or not
@@ -58,6 +78,8 @@ typedef struct {
     Button buttons[6];
     int fixed ; // determines whether universe was read from file (1) or random (0)
 } Universe ;
+
+
 
 void myDrawLib(void);
 void myKeyLib(unsigned char key, int x, int y);
@@ -84,3 +106,4 @@ int loadUniverse ( Universe *u, char filename[]) ;
 
 
 #endif
+
