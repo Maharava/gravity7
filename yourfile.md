@@ -44,7 +44,7 @@ double zoom, gtime, year=0,tcount = 0;  // zoom factor and global time
 float azi = 0, alt = 0;  // azimuth and altitude
 const float dstep = 2;  // step-size for the azimuth and altitude
 const double reps = 0.01;  // radius of each object
-int traceon = 1, showstats = 1, click = 0;  // flag variable for indicating whether trajectory trace is on or not
+int traceon = 1, showstats = 1, click = 0, gravtype = 0;  // flag variable for indicating whether trajectory trace is on or not
 
 
 // Universe, containing everything
@@ -66,6 +66,16 @@ int main(int argc, char *argv[])
 	glutDisplayFunc(myDraw);  		// register function for drawing event
 	glutKeyboardFunc(myKey);		// register function for keyboard event
 	glutTimerFunc(TIMER, simulateGravity, 0);
+
+	if (gravtype == 0)
+		{
+		glutTimerFunc(TIMER, simulateGravity, 0);
+		}
+	else
+	if (gravtype == 1)
+		{
+		//glutTimerFunc(TIMER,simulateGravityNewt,0);
+		}
 
 	zoom = 1;  // initialise zoom to 1
 	// set collision flags for each body to 0 (i.e. no collision)
@@ -127,6 +137,7 @@ int i = 0; //counter variable
 
 void newYear(void)
     {
+    printf("NewYear\n");
     int i = 0, c=0;
     tcount += timeStep*10;
     if (tcount >= 5)
@@ -139,6 +150,9 @@ void newYear(void)
                 c = uni.bodies[i].pop*0.014;
                 c *= 1+(uni.bodies[i].popgrow/100);
                 uni.bodies[i].pop += c;
+                nameSav(i,uni.bodies[i].savNm);
+				nameAtmo(i,uni.bodies[i].atmNm);
+				nameEnviro(i,uni.bodies[i].envNm);
                 if (uni.bodies[i].pop > uni.bodies[i].maxpop)
                     {
                     uni.bodies[i].pop = uni.bodies[i].maxpop;
@@ -151,7 +165,7 @@ void newYear(void)
 
 void calculateGravity ( double m1, double m2, double pos1[DIM], double pos2[DIM], double G, double result[DIM]){
 
-
+printf("CalGrav\n");
 	double distVect[DIM], distMag=0, gForce=0;
 	int i = 0; //counter variable
     arrayZero(result);
@@ -176,29 +190,40 @@ void calculateGravity ( double m1, double m2, double pos1[DIM], double pos2[DIM]
 
 void simulateGravity(int data)
 	{
-	int j=0,i=0;
+	printf("SimGrav\n");
+	int i=0;
 	for(i=1;i<uni.numBodies;i++)
 		{
 		uni.bodies[i].position[0] = cos(uni.bodies[i].ang) * uni.bodies[i].dist;
 		uni.bodies[i].position[1] = sin(uni.bodies[i].ang) * uni.bodies[i].dist;
-		uni.bodies[i].ang += ((1-uni.bodies[i].dist/5)+(uni.bodies[i].mass/1000))/100;
+		uni.bodies[i].ang += ((1-uni.bodies[i].dist/5)+(uni.bodies[i].mass/1000))/300;
 		if (uni.bodies[i].ang >=6.28)
 			{
 			uni.bodies[i].ang -= 6.28;
 			}
 		}
+	for(i=0;i<uni.numMoons;i++)
+		{
+		uni.moons[i].position[0] = uni.bodies[uni.moons[i].home].position[0]+cos(uni.moons[i].ang) * uni.moons[i].dist;
+		uni.moons[i].position[1] = uni.bodies[uni.moons[i].home].position[1]+sin(uni.moons[i].ang) * uni.moons[i].dist;
+		uni.moons[i].ang += ((1-uni.moons[i].dist/5)+(uni.moons[i].mass/1000))/50;
+		if (uni.moons[i].ang >=6.28)
+			{
+			uni.moons[i].ang -= 6.28;
+			}
+		}
+
 	gtime += timeStep ;
 	glutPostRedisplay();
 	glutTimerFunc ( TIMER, simulateGravity, 0 ) ;
 	}
 
 
-void simulateGravityTrue(int data)
+void simulateGravityNewt(int data)
 {
-	int j=0,curBody=0,othBody=0;
-	int i = 0; //counter variable
-
-	double  netForce[DIM], result[DIM],dispVect[DIM], totRad = 0, dispMagn = 0;
+printf("SimGravNew\n");
+	int j=0,i=0,curBody=0,othBody=0;
+	double  netForce[DIM], result[DIM];
 	arrayZero(netForce);
 	for(curBody=0;curBody<uni.numBodies;curBody++) //computes new accel, displacement and velocity
 		{
@@ -229,20 +254,27 @@ void simulateGravityTrue(int data)
 			{
 			uni.bodies[curBody].position[i] += (uni.bodies[curBody].velocity[i]*timeStep)+(.5*uni.bodies[curBody].accel[i]*(timeStep*timeStep));
 			uni.bodies[curBody].velocity[i] += (uni.bodies[curBody].accel[i]*timeStep);
-
 			}
 		}
-
+	for(i=0;i<uni.numMoons;i++)
+		{
+		uni.moons[i].position[0] = uni.bodies[uni.moons[i].home].position[0]+cos(uni.moons[i].ang) * uni.moons[i].dist;
+		uni.moons[i].position[1] = uni.bodies[uni.moons[i].home].position[1]+sin(uni.moons[i].ang) * uni.moons[i].dist;
+		uni.moons[i].ang += ((1-uni.moons[i].dist/5)+(uni.moons[i].mass/1000))/10;
+		if (uni.moons[i].ang >=6.28)
+			{
+			uni.moons[i].ang -= 6.28;
+			}
+		}
 	gtime += timeStep ;
 	glutPostRedisplay();
-	glutTimerFunc ( TIMER, simulateGravity, 0 ) ;
-}
+	glutTimerFunc ( TIMER, simulateGravityNewt, 0 ) ;
+		}
 
 
 int loadUniverse ( Universe *u, char filename[]){
 
 	int c=0, j=0;
-	int i = 0; //counter variable
 
 	char buff[50];
 	double  bodData[11];
@@ -298,6 +330,7 @@ int loadUniverse ( Universe *u, char filename[]){
 // initialise bodies at random locations within the "world of view"
 void initialise(void)
 {
+	printf("Initialise\n");
    	int i = 0,j = 0, dist=0;
    	double res[DIM], iniForce[DIM];
 	uni.numCollisions = 0;
@@ -305,32 +338,35 @@ void initialise(void)
 	year = 0;
 	if (uni.fixed == 0)
 		{
+		for(i=0;i<(uni.numBodies-1);i++)
+			{
+			uni.buttons[i].selected = 0;
+			}
 		uni.buttons[0].selected = 1;
 		uni.G = DEFAULT_G;
 		for(i=0;i<uni.numBodies;i++)
 			{
-			uni.bodies[i].mass = ((float)rand()/(float)RAND_MAX)*10+.1;
+			uni.bodies[i].mass = ((float)rand()/(float)RAND_MAX)*20+.1;
             uni.bodies[i].radius = (uni.bodies[i].mass/100);
             for(j=0;j<DIM;j++)
                 {
                 uni.bodies[i].colour[j] = ((float)rand()/(float)RAND_MAX)+.1;
                 }
-            uni.bodies[i].position[0] = .25+(.25*i);
-            uni.bodies[i].position[1] = .25+(.25*i);
-            uni.bodies[i].position[2] = 0;
-            uni.bodies[i].dist = 0;
-            uni.bodies[i].ang = rand() % 6;
+			uni.bodies[i].position[0] = .25+(.25*i);
+			uni.bodies[i].position[1] = .25+(.25*i);
+			uni.bodies[i].position[2] = 0;
+			uni.bodies[i].dist = 0;
+			uni.bodies[i].ang = rand() % 6;
             for(j=0;j<DIM;j++)
 				{
 				uni.bodies[i].dist += pow(uni.bodies[i].position[j],2);
 				}
 			uni.bodies[i].dist = sqrt(uni.bodies[i].dist);
-            uni.bodies[i].position[1] = 0;
             genworld(i);
 			}
 
             uni.bodies[0].mass = 2000;
-            uni.bodies[0].radius = (uni.bodies[0].mass/10000);
+            uni.bodies[0].radius = (uni.bodies[0].mass/5000);
             for(j=0;j<DIM;j++)
                 {
                 uni.bodies[0].position[j] = 0;
@@ -341,6 +377,12 @@ void initialise(void)
 			for(i=1;i<uni.numBodies;i++)
 				{
 				uni.bodies[0].mass += (uni.bodies[i].mass*1000); //ensures Star mass is much greater than every planets combined
+				//printf("Plan%d\nPosX: %lf PosY: %lf PosZ: %lf\n",i,uni.bodies[i].position[0],uni.bodies[i].position[1],uni.bodies[i].position[2]);
+				genMoons(i); //generate moons
+				}
+			for(i=0;i<uni.numMoons;i++)
+				{
+				uni.bodies[uni.moons[i].home].moonnum ++;
 				}
 
             for(i=1;i<uni.numBodies;i++)
@@ -353,9 +395,7 @@ void initialise(void)
 					}
 				dist = sqrt(dist)/2; //gives us the radius of the orbit
 				uni.bodies[i].velocity[2] = (sqrt((uni.G*uni.bodies[0].mass)));
-                printf("Test\n");
                 }
-
         }
     }
 
@@ -363,14 +403,13 @@ void initialise(void)
 
 void genworld (int num)
     {
-
+    printf("Worlds\n");
+    uni.bodies[num].moonnum = 0;
     uni.bodies[num].type = rand() % 7;
     switch(uni.bodies[num].type)
         {
-
         case 0: //arboreal
             {
-            printf("TEST Arb \n");
             sscanf("Arboreal","%s",uni.bodies[num].typnm);
             uni.bodies[num].atm = rand() % 3;
             uni.bodies[num].enviro = rand() % 3;
@@ -435,7 +474,7 @@ void genworld (int num)
         case 7: //Gas
             {
             sscanf("Gas","%s",uni.bodies[num].typnm);
-            uni.bodies[num].atm = (rand() % 2)+3;
+            uni.bodies[num].atm = (rand() 	% 2)+3;
             uni.bodies[num].savage = (rand() % 2);
             uni.bodies[num].enviro = (rand() % 3)+2;
             uni.bodies[num].popgrow = -5;
@@ -443,13 +482,52 @@ void genworld (int num)
             }
         }
     uni.bodies[num].maxpop = (100000*uni.bodies[num].radius)*(1-(uni.bodies[num].savage/10))*(1-((uni.bodies[num].atm*5)/100))*(1-((uni.bodies[num].enviro*5)/100));
-    uni.bodies[num].pop = uni.bodies[num].maxpop/2;
+    uni.bodies[num].pop = rand() % (int)uni.bodies[num].maxpop;
+    nameSav(num,uni.bodies[num].savNm);
+    nameAtmo(num,uni.bodies[num].atmNm);
+	nameEnviro(num,uni.bodies[num].envNm);
+	}
+
+void genMoons (num)
+	{
+	printf("Moons\n");
+	int cc=0, j=0, i =0;
+	double dist=0;
+	cc = rand()%3;
+	if (cc > 0)
+		{
+		for(i=0;i<cc;i++)
+			{
+			uni.moons[uni.numMoons].position[0] = uni.bodies[num].position[0]+(uni.bodies[num].position[0]*.15);
+			uni.moons[uni.numMoons].position[1] = uni.bodies[num].position[1]+(uni.bodies[num].position[1]*.15);
+			uni.moons[uni.numMoons].position[2] = uni.bodies[num].position[2];
+			//printf("Moon%d\nPosX: %lf PosY: %lf PosZ: %lf\n",uni.numMoons,uni.moons[uni.numMoons].position[0],uni.moons[uni.numMoons].position[1],uni.moons[uni.numMoons].position[2]);
+			uni.moons[uni.numMoons].ang = rand()%6;
+			uni.moons[uni.numMoons].mass = ((float)rand()/(float)RAND_MAX)*2+.1;
+			uni.moons[uni.numMoons].radius = (uni.moons[uni.numMoons].mass/100);
+			uni.moons[uni.numMoons].home = num;
+			for(j=0;j<DIM;j++)
+				{
+				uni.moons[uni.numMoons].colour[j] = rand()/RAND_MAX;
+				dist += pow(uni.moons[uni.numMoons].position[j]-uni.bodies[num].position[j],2);
+				//printf("Moon%d Pos%d %lf Dist %lf\n",uni.numMoons,j,uni.moons[uni.numMoons].position[j],dist);
+				}
+			if (uni.moons[uni.numMoons].colour[0]+uni.moons[uni.numMoons].colour[1]+uni.moons[uni.numMoons].colour[2] == 0)
+				{
+				uni.moons[uni.numMoons].colour[(rand()%2)] = 1;
+				}
+			uni.moons[uni.numMoons].dist = sqrt(dist)/2+uni.bodies[uni.moons[uni.numMoons].home].radius;
+
+			uni.numMoons ++;
+			}
+		}
     }
 
 void myKey(unsigned char key, int x, int y)
 {
+printf("Keys\n");
 	//myKeyLib(key, x, y);
-	int i=0;
+	int i=0,j=0;
 	switch(key)
 		{
 		case 'a':
@@ -509,9 +587,28 @@ void myKey(unsigned char key, int x, int y)
                 {
                 showstats = -1;
                 }
-            printf("%d\n",showstats);
 			break;
 			}
+		/*case 'g':
+			{
+			if (gravtype==0)
+				{
+				gravtype = 2;
+				}
+			if (gravtype == 1)
+				{
+				for(i=0;i<uni.numBodies;i++)
+					{
+					for(j=0;j<DIM;j++)
+						{
+						uni.bodies[i].dist += pow(uni.bodies[i].position[j],2);
+						}
+					uni.bodies[i].dist = sqrt(uni.bodies[i].dist);
+					}
+				gravtype = -1;
+				}
+			break;
+			}*/
 		case 'b':
 			{
 			if (uni.fixed == 0 && uni.numBodies < 1024)
@@ -532,7 +629,7 @@ void myKey(unsigned char key, int x, int y)
 			}
 		case 'o':
 			{
-			for(i=1;i<6;i++)
+			for(i=1;i<(uni.numBodies-1);i++)
 				{
 				if (uni.buttons[i].selected == 1 && click == 0)
 					{
@@ -545,7 +642,7 @@ void myKey(unsigned char key, int x, int y)
 			}
 		case 'l':
 			{
-			for(i=0;i<5;i++)
+			for(i=0;i<(uni.numBodies-2);i++)
 				{
 				if (uni.buttons[i].selected == 1 && click == 0)
 					{
@@ -566,14 +663,6 @@ void myKey(unsigned char key, int x, int y)
 		exit(-1) ; 					/* leave the program */
 	}
 	}
-
-
-/* END OF WEEK 3 FUNCTIONS */
-
-
-/* WEEK 4 FUNCTIONS */
-
-// compute collision and update velocities after collision
 
 
 void computeCollision(Object *a, Object *b)
@@ -620,6 +709,17 @@ void myDraw(void)
         {
         showstats += .1;
         }
+
+	if (gravtype > 1)
+        {
+        gravtype -= .1;
+        }
+
+    if (gravtype < 0)
+        {
+        gravtype += .1;
+        }
+
 	if (click > 0)
 		{
 		click -= .1;
@@ -627,7 +727,7 @@ void myDraw(void)
 
 
     char buffer[256];
-    int i = 0, bodyNum=0;
+    int i = 0;
 
     glLoadIdentity();
     glPushMatrix();
@@ -635,6 +735,9 @@ void myDraw(void)
     glRasterPos2f(-0.99,-0.75);
     //sprintf(buffer,"Number of collisions: %d",uni.numCollisions);
     sprintf(buffer,"o and l to navigate planets");
+    glutBitmapString(GLUT_BITMAP_8_BY_13,buffer);
+    glRasterPos2f(-0.99,-0.8);
+    sprintf(buffer,"g to change gravity types");
     glutBitmapString(GLUT_BITMAP_8_BY_13,buffer);
 
     glRasterPos2f(-0.99,-0.70);
@@ -649,33 +752,23 @@ void myDraw(void)
     sprintf(buffer,"Year: %.0lf",year);
     glutBitmapString(GLUT_BITMAP_8_BY_13,buffer);
 
-    for(i=0;i<6;i++)
+    for(i=0;i<(uni.numBodies-1);i++)
 		{
 		glColor3f(1,1,1);
 		if (uni.buttons[i].selected == 1)
 			{
+			glRasterPos2f(0.45,.95);
+            glColor3f(1,1,1);
+			//sprintf(buffer,"Planet %d\nPop: %.0lfk/%.0lfk\nType: %s\nSavage: %s\nAtm: %s\nEnviro: %s\nDiameter: %.0lfkm",i+1,uni.bodies[i+1].pop,uni.bodies[i+1].maxpop,uni.bodies[i+1].typnm,uni.bodies[i+1].savage,uni.bodies[i+1].atm,uni.bodies[i+1].enviro,uni.bodies[i+1].radius*2*100000);
+			sprintf(buffer,"Planet %d\nPop: %.0lfk/%.0lfk\nType: %s\nSavage: %s\nAtm: %s\nEnviro: %s\nDiameter: %.0lfkm\nMoons: %d\n",i+1,uni.bodies[i+1].pop,uni.bodies[i+1].maxpop,uni.bodies[i+1].typnm,uni.bodies[i+1].savNm,uni.bodies[i+1].atmNm,uni.bodies[i+1].envNm,uni.bodies[i+1].radius*2*100000,uni.bodies[i].moonnum);
+			glutBitmapString(GLUT_BITMAP_8_BY_13,buffer);
 			glColor3f(0,0,1);
 			}
 		glRasterPos2f(-0.99,.9-(.1*i));
-		sprintf(buffer,"Planet %d",i);
+		sprintf(buffer,"Planet %d",i+1);
 		glutBitmapString(GLUT_BITMAP_8_BY_13,buffer);
 		}
 	glColor3f(1,1,1);
-
-
-    for(i=0;i<6;i++)
-        {
-		glColor3f(1,1,1);
-		if (uni.buttons[i].selected == 1)
-			{
-			glRasterPos2f(0.65,.75);
-            glColor3f(1,1,1);
-			sprintf(buffer,"Planet %d\nPop: %.0lfk/%.0lfk\nType: %s\nSavage: %d\nAtm: %d\nEnviro: %d\nDiameter: %.0lfkm",i+1,uni.bodies[i+1].pop,uni.bodies[i+1].maxpop,uni.bodies[i+1].typnm,uni.bodies[i+1].savage,uni.bodies[i+1].atm,uni.bodies[i+1].enviro,uni.bodies[i+1].radius*2*100000);
-			glutBitmapString(GLUT_BITMAP_8_BY_13,buffer);
-
-			}
-		}
-
     glPopMatrix();
 
     glRotatef(azi,0,1,0);
@@ -694,13 +787,15 @@ void myDraw(void)
 			}
         glPopMatrix();
         }
-
-
-
-    //glPushMatrix();
-    //glColor3f(1,1,1);
-    //glutWireCube(zoom);
-    glBegin(GL_LINES);
+	for(i=0;i<uni.numMoons;i++)
+		{
+        glPushMatrix();
+        glTranslatef(uni.moons[i].position[0] *zoom,uni.moons[i].position[1] *zoom,uni.moons[i].position[2] *zoom);
+        glColor3f(uni.moons[i].colour[0],uni.moons[i].colour[1],uni.moons[i].colour[2]);
+        glutSolidSphere(uni.moons[i].radius*zoom,10,10);
+        glPopMatrix();
+        }
+		glBegin(GL_LINES);
         glColor3f(1,0,0);
         glVertex3f(-0.5*zoom,-0.5*zoom,-0.5*zoom);
         glVertex3f(-0.2*zoom,-0.5*zoom,-0.5*zoom);
@@ -721,35 +816,73 @@ void myDraw(void)
     glPopMatrix();
     glutSwapBuffers();
 
-	/* You will need to do a number of things in this function
-
-	- print the simulation parameters as text in the screen (Hint: sprintf is your friend)
-	- print instructions on what keys to press to rotate, increase bodies, zoom, etc.
-	- draw each body as a sphere using the stored colour and x,y,z coordinate positions.
-	  These are stored in the global bodies[] array.
-	- plot the trajectories from the global trace[] array
-
-	*/
 	newYear();
 }
 
-/* ADDITIONAL FUNCTIONS PROVIDED FOR YOU */
+void nameSav (int plan, char savNm[20])
+	{
+	if (uni.bodies[plan].savage <= 1)
+		{
+		sscanf("Peaceful","%s",savNm);
+		}
+	if (uni.bodies[plan].savage > 1)
+		{
+		sscanf("Earthlike","%s",savNm);
+		}
+	if (uni.bodies[plan].savage >= 4)
+		{
+		sscanf("Wild","%s",savNm);
+		}
+	if (uni.bodies[plan].savage >= 6)
+		{
+		sscanf("Dangerous","%s",savNm);
+		}
+	if (uni.bodies[plan].savage >= 8)
+		{
+		sscanf("Predatory","%s",savNm);
+		}
+	if (uni.bodies[plan].savage == 10)
+		{
+		sscanf("Extreme","%s",savNm);
+		}
+	}
 
-/* Use the following function to debug your code and print out an array to the screen
-*/
-void arrayPrint(double a[DIM])
-{
-	int i;
+void nameAtmo (int plan, char atmNm[20])
+	{
+	if (uni.bodies[plan].atm <= 0)
+		{
+		sscanf("Earth Air","%s",atmNm);
+		}
+	if (uni.bodies[plan].atm >= 1)
+		{
+		sscanf("Uncomfortable","%s",atmNm);
+		}
+	if (uni.bodies[plan].atm >= 3)
+		{
+		sscanf("Unhealthy","%s",atmNm);
+		}
+	if (uni.bodies[plan].atm == 5)
+		{
+		sscanf("Poison","%s",atmNm);
+		}
+	}
 
-	printf("[ ");
-
-	for (i = 0; i < DIM; i++)
-		printf("%lg, ", a[i]);
-
-	printf(" ] ");
-}
-
-
-
-
-
+void nameEnviro (int plan, char envNm[20])
+	{
+	if (uni.bodies[plan].enviro <= 1)
+		{
+		sscanf("Eden-like","%s",envNm);
+		}
+	if (uni.bodies[plan].enviro >= 2)
+		{
+		sscanf("Earth-like","%s",envNm);
+		}
+	if (uni.bodies[plan].enviro == 4)
+		{
+		sscanf("Dangerous","%s",envNm);
+		}
+	if (uni.bodies[plan].enviro >= 5)
+		{
+		sscanf("Deadly","%s",envNm);
+		}
+	}
