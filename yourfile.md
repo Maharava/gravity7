@@ -39,13 +39,13 @@ void myKey(unsigned char key,int x, int y);
 
 #define TIMER 20  // number of milliseconds for each time step (for glutTimerFunc)
 
-const double timeStep = 0.001;  // in seconds
-double zoom, gtime, year=0,tcount = 0;  // zoom factor and global time
+const double timeStep = 0.001;  // in seconds, the rate at which things happen
+double zoom, gtime, year=0,tcount = 0;  // zoom factor. global time, current year and a time counter for the year
 float azi = 0, alt = 0;  // azimuth and altitude
 const float dstep = 2;  // step-size for the azimuth and altitude
 const double reps = 0.01;  // radius of each object
-int traceon = 1, showstats = 1, click = 0, gravtype = 0;  // flag variable for indicating whether trajectory trace is on or not
-
+int traceon = 1, ;  // flag variable for indicating whether trajectory trace is on or not
+int click = 0; //clicker varuiable to ensure things don't happen all at once
 
 // Universe, containing everything
 Universe uni ;
@@ -66,17 +66,7 @@ int main(int argc, char *argv[])
 	glutDisplayFunc(myDraw);  		// register function for drawing event
 	glutKeyboardFunc(myKey);		// register function for keyboard event
 	glutTimerFunc(TIMER, simulateGravity, 0);
-
-	if (gravtype == 0)
-		{
-		glutTimerFunc(TIMER, simulateGravity, 0);
-		}
-	else
-	if (gravtype == 1)
-		{
-		//glutTimerFunc(TIMER,simulateGravityNewt,0);
-		}
-
+	
 	zoom = 1;  // initialise zoom to 1
 	// set collision flags for each body to 0 (i.e. no collision)
 	for (i = 0; i < MAX_BODIES; i++)
@@ -134,42 +124,39 @@ int i = 0; //counter variable
 	return (dotProduct);
 
 }
-
+//Increases tcount until it's hit the year point (>=5), at which point populations are updated
+//also updates the planets terrain descriptions in case of changes (changes not implemented)
 void newYear(void)
-    {
-    printf("NewYear\n");
-    int i = 0, c=0;
-    tcount += timeStep*10;
-    if (tcount >= 5)
-        {
-        year += 1;
-        if ((int)floor(gtime)%1 == 0)
-            {
-            for(i=0;i<uni.numBodies;i++)
-                {
-                c = uni.bodies[i].pop*0.014;
-                c *= 1+(uni.bodies[i].popgrow/100);
-                uni.bodies[i].pop += c;
-                nameSav(i,uni.bodies[i].savNm);
-				nameAtmo(i,uni.bodies[i].atmNm);
-				nameEnviro(i,uni.bodies[i].envNm);
-                if (uni.bodies[i].pop > uni.bodies[i].maxpop)
-                    {
-                    uni.bodies[i].pop = uni.bodies[i].maxpop;
-                    }
-                }
-            }
+	{
+	int i = 0, c=0;
+	tcount += timeStep*10;
+	if (tcount >= 5)
+		{
+		year += 1;
+		for(i=0;i<uni.numBodies;i++)
+			{
+			c = uni.bodies[i].pop*0.014; //sets a base pop increase of 1.4% of population
+			c *= 1+(uni.bodies[i].popgrow/100); //adjusts 'c' to include the population modification of the planet
+			uni.bodies[i].pop += c; //increases population
+			nameSav(i,uni.bodies[i].savNm);
+			nameAtmo(i,uni.bodies[i].atmNm);
+			nameEnviro(i,uni.bodies[i].envNm); //re-updates planetary terrain descriptors
+                		if (uni.bodies[i].pop > uni.bodies[i].maxpop)
+                    		{
+                    		uni.bodies[i].pop = uni.bodies[i].maxpop; //keeps the pop from going over the maximum allowed
+                    		}
+                	}
+            	}
         tcount = 0;
         }
     }
 
-void calculateGravity ( double m1, double m2, double pos1[DIM], double pos2[DIM], double G, double result[DIM]){
-
-printf("CalGrav\n");
+void calculateGravity ( double m1, double m2, double pos1[DIM], double pos2[DIM], double G, double result[DIM])
+	{
 	double distVect[DIM], distMag=0, gForce=0;
 	int i = 0; //counter variable
-    arrayZero(result);
-    arrayZero(distVect);
+	arrayZero(result);
+	arrayZero(distVect);
 	for(i=0;i<DIM;i++)
 		{
 		distVect[i] = pos2[i]-pos1[i];
@@ -187,22 +174,21 @@ printf("CalGrav\n");
 		}
   // calculateGravityLib ( m1, m2, pos1, pos2, G, result);
 }
-
+//a new version of simulateGravity, forcing planets and moons into circular orbits
 void simulateGravity(int data)
 	{
-	printf("SimGrav\n");
 	int i=0;
 	for(i=1;i<uni.numBodies;i++)
 		{
 		uni.bodies[i].position[0] = cos(uni.bodies[i].ang) * uni.bodies[i].dist;
-		uni.bodies[i].position[1] = sin(uni.bodies[i].ang) * uni.bodies[i].dist;
-		uni.bodies[i].ang += ((1-uni.bodies[i].dist/5)+(uni.bodies[i].mass/1000))/300;
+		uni.bodies[i].position[1] = sin(uni.bodies[i].ang) * uni.bodies[i].dist; //works out the new position based on their angle from the centre
+		uni.bodies[i].ang += ((1-uni.bodies[i].dist/5)+(uni.bodies[i].mass/1000))/300; //increases angle based on distance from the sun and the mass of the planet
 		if (uni.bodies[i].ang >=6.28)
 			{
-			uni.bodies[i].ang -= 6.28;
+			uni.bodies[i].ang -= 6.28; //resets down below 2pi
 			}
 		}
-	for(i=0;i<uni.numMoons;i++)
+	for(i=0;i<uni.numMoons;i++) //same as above, but for moons. Main difference is the addition of the homeworlds position - as they don't orbit the centre(sun), we need to adjust their position by their homeworlds
 		{
 		uni.moons[i].position[0] = uni.bodies[uni.moons[i].home].position[0]+cos(uni.moons[i].ang) * uni.moons[i].dist;
 		uni.moons[i].position[1] = uni.bodies[uni.moons[i].home].position[1]+sin(uni.moons[i].ang) * uni.moons[i].dist;
@@ -218,10 +204,9 @@ void simulateGravity(int data)
 	glutTimerFunc ( TIMER, simulateGravity, 0 ) ;
 	}
 
-
+//original, newtonian style gravity
 void simulateGravityNewt(int data)
 {
-printf("SimGravNew\n");
 	int j=0,i=0,curBody=0,othBody=0;
 	double  netForce[DIM], result[DIM];
 	arrayZero(netForce);
@@ -232,7 +217,7 @@ printf("SimGravNew\n");
 			{
 			if (othBody != curBody)
 				{
-				calculateGravity(uni.bodies[curBody].mass,uni.bodies[othBody].mass,uni.bodies[curBody].position,uni.bodies[othBody].position,uni.G,result);
+calculateGravity(uni.bodies[curBody].mass,uni.bodies[othBody].mass,uni.bodies[curBody].position,uni.bodies[othBody].position,uni.G,result);
 				for(j=0;j<DIM;j++)
 					{
 					netForce[j]+=result[j];
@@ -327,198 +312,194 @@ int loadUniverse ( Universe *u, char filename[]){
 }
 
 
-// initialise bodies at random locations within the "world of view"
+// initialise planets, moons and the sun
 void initialise(void)
-{
-	printf("Initialise\n");
-   	int i = 0,j = 0, dist=0;
+	{
+	int i = 0,j = 0, dist=0;
    	double res[DIM], iniForce[DIM];
 	uni.numCollisions = 0;
 	gtime = 0;
-	year = 0;
+	year = 0; //resets core variables
 	if (uni.fixed == 0)
 		{
 		for(i=0;i<(uni.numBodies-1);i++)
 			{
-			uni.buttons[i].selected = 0;
+			uni.buttons[i].selected = 0; //creates the side panel menu buttons. uni.numBodies-1 is due to the sun, and not needing a button for it
 			}
-		uni.buttons[0].selected = 1;
+		uni.buttons[0].selected = 1; //auto-selects the first menu button
 		uni.G = DEFAULT_G;
 		for(i=0;i<uni.numBodies;i++)
 			{
 			uni.bodies[i].mass = ((float)rand()/(float)RAND_MAX)*20+.1;
-            uni.bodies[i].radius = (uni.bodies[i].mass/100);
-            for(j=0;j<DIM;j++)
-                {
-                uni.bodies[i].colour[j] = ((float)rand()/(float)RAND_MAX)+.1;
-                }
+			uni.bodies[i].radius = (uni.bodies[i].mass/100); //gives the planets mass and radius
+			for(j=0;j<DIM;j++)
+		                {
+		                uni.bodies[i].colour[j] = ((float)rand()/(float)RAND_MAX)+.1; //sets the planets colour
+                		}
 			uni.bodies[i].position[0] = .25+(.25*i);
-			uni.bodies[i].position[1] = .25+(.25*i);
+			uni.bodies[i].position[1] = .25+(.25*i); //position is set from the sun according to which number this planet is
 			uni.bodies[i].position[2] = 0;
 			uni.bodies[i].dist = 0;
-			uni.bodies[i].ang = rand() % 6;
-            for(j=0;j<DIM;j++)
+			uni.bodies[i].ang = rand() % 6; //ensures that all planets don't start in line with each other
+            		for(j=0;j<DIM;j++)
 				{
-				uni.bodies[i].dist += pow(uni.bodies[i].position[j],2);
+				uni.bodies[i].dist += pow(uni.bodies[i].position[j],2); //works out the distance between the planet and the sun
 				}
 			uni.bodies[i].dist = sqrt(uni.bodies[i].dist);
-            genworld(i);
+            		genworld(i); //generates the worlds other stats
 			}
-
-            uni.bodies[0].mass = 2000;
-            uni.bodies[0].radius = (uni.bodies[0].mass/5000);
-            for(j=0;j<DIM;j++)
-                {
-                uni.bodies[0].position[j] = 0;
-                uni.bodies[0].colour[j] = 1;
+	uni.bodies[0].mass = 2000; //sets the suns base mass
+	uni.bodies[0].radius = (uni.bodies[0].mass/5000); //sets the suns radius
+	for(j=0;j<DIM;j++)
+		{
+		uni.bodies[0].position[j] = 0;
+                uni.bodies[0].colour[j] = 1; //suns colour
                 }
-            sscanf("Sun","%s",uni.bodies[0].typnm);
-
-			for(i=1;i<uni.numBodies;i++)
+	sscanf("Sun","%s",uni.bodies[0].typnm); //name
+	for(i=1;i<uni.numBodies;i++)
+		{
+		uni.bodies[0].mass += (uni.bodies[i].mass*1000); //ensures Star mass is much greater than every planets combined
+		genMoons(i); //generate moons
+		}
+		for(i=0;i<uni.numMoons;i++)
+			{
+			uni.bodies[uni.moons[i].home].moonnum ++; //ensures each planet has an accurate count of moons
+			}
+		//this function works out all the distances for the planets from the sun
+		for(i=1;i<uni.numBodies;i++)
+                	{
+	                arrayZero(res);
+        	        arrayZero(iniForce);
+			for(j=0;j<DIM;j++)
 				{
-				uni.bodies[0].mass += (uni.bodies[i].mass*1000); //ensures Star mass is much greater than every planets combined
-				//printf("Plan%d\nPosX: %lf PosY: %lf PosZ: %lf\n",i,uni.bodies[i].position[0],uni.bodies[i].position[1],uni.bodies[i].position[2]);
-				genMoons(i); //generate moons
+				dist += pow(uni.bodies[i].position[j]-uni.bodies[0].position[j],2);
 				}
-			for(i=0;i<uni.numMoons;i++)
-				{
-				uni.bodies[uni.moons[i].home].moonnum ++;
-				}
-
-            for(i=1;i<uni.numBodies;i++)
-                {
-                arrayZero(res);
-                arrayZero(iniForce);
-				for(j=0;j<DIM;j++)
-					{
-					dist += pow(uni.bodies[i].position[j]-uni.bodies[0].position[j],2);
-					}
-				dist = sqrt(dist)/2; //gives us the radius of the orbit
-				uni.bodies[i].velocity[2] = (sqrt((uni.G*uni.bodies[0].mass)));
-                }
+			dist = sqrt(dist)/2; //gives us the radius of the orbit
+			uni.bodies[i].velocity[2] = (sqrt((uni.G*uni.bodies[0].mass)));
+                	}
         }
     }
 
 	 //initialiseLib() ;
 
+//This generates the worlds terrain data
 void genworld (int num)
-    {
-    printf("Worlds\n");
-    uni.bodies[num].moonnum = 0;
-    uni.bodies[num].type = rand() % 7;
-    switch(uni.bodies[num].type)
-        {
-        case 0: //arboreal
-            {
-            sscanf("Arboreal","%s",uni.bodies[num].typnm);
-            uni.bodies[num].atm = rand() % 3;
-            uni.bodies[num].enviro = rand() % 3;
-            uni.bodies[num].savage = (rand() % 6)+4;
-            uni.bodies[num].popgrow = (rand() % 10)+5;
-            break;
-            }
-        case 1: //Oceanic
-            {
-            sscanf("Oceanic","%s",uni.bodies[num].typnm);
-            uni.bodies[num].atm = (rand() % 5);
-            uni.bodies[num].savage = (rand() % 10);
-            uni.bodies[num].enviro = (rand() % 4)+1;
-            uni.bodies[num].popgrow = (rand() % 10)-5;
-            break;
-            }
-        case 2: //Desert
-            {
-            sscanf("Desert","%s",uni.bodies[num].typnm);
-            uni.bodies[num].atm = (rand() % 4);
-            uni.bodies[num].savage = (rand() % 6);
-            uni.bodies[num].enviro = (rand() % 3)+2;
-            uni.bodies[num].popgrow = (rand() % 5)-5;
-            break;
-            }
-        case 3: //Primordial
-            {
-            sscanf("Primordial","%s",uni.bodies[num].typnm);
-            uni.bodies[num].atm = (rand() % 3)+2;
-            uni.bodies[num].savage = (rand() % 3);
-            uni.bodies[num].enviro = (rand() % 1)+4;
-            uni.bodies[num].popgrow = -20;
-            break;
-            }
-        case 4: //Ruins
-            {
-            sscanf("Ruins","%s",uni.bodies[num].typnm);
-            uni.bodies[num].atm = (rand() % 4)+1;
-            uni.bodies[num].savage = (rand() % 8);
-            uni.bodies[num].enviro = (rand() % 5);
-            uni.bodies[num].popgrow = (rand() % 25)-5;
-            break;
-            }
-        case 5: //Ice
-            {
-            sscanf("Ice","%s",uni.bodies[num].typnm);
-            uni.bodies[num].atm = (rand() % 5);
-            uni.bodies[num].savage = (rand() % 7);
-            uni.bodies[num].enviro = (rand() % 5);
-            uni.bodies[num].popgrow = (rand() % 5)-15;
-            break;
-            }
-        case 6: //Terran
-            {
-            sscanf("Terran","%s",uni.bodies[num].typnm);
-            uni.bodies[num].atm = (rand() % 2);
-            uni.bodies[num].savage = (rand() % 6);
-            uni.bodies[num].enviro = (rand() % 2);
-            uni.bodies[num].popgrow = +10;
-            break;
-            }
-        case 7: //Gas
-            {
-            sscanf("Gas","%s",uni.bodies[num].typnm);
-            uni.bodies[num].atm = (rand() 	% 2)+3;
-            uni.bodies[num].savage = (rand() % 2);
-            uni.bodies[num].enviro = (rand() % 3)+2;
-            uni.bodies[num].popgrow = -5;
-            break;
-            }
-        }
-    uni.bodies[num].maxpop = (100000*uni.bodies[num].radius)*(1-(uni.bodies[num].savage/10))*(1-((uni.bodies[num].atm*5)/100))*(1-((uni.bodies[num].enviro*5)/100));
-    uni.bodies[num].pop = rand() % (int)uni.bodies[num].maxpop;
-    nameSav(num,uni.bodies[num].savNm);
-    nameAtmo(num,uni.bodies[num].atmNm);
-	nameEnviro(num,uni.bodies[num].envNm);
+	{
+	uni.bodies[num].moonnum = 0;
+	uni.bodies[num].type = rand() % 7;
+	//after getting a random type, these case statements set the name of the planet type, the atmosphere, environment, savagery and population growth
+	switch(uni.bodies[num].type)
+		{
+		case 0: //arboreal
+		    {
+		    sscanf("Arboreal","%s",uni.bodies[num].typnm);
+		    uni.bodies[num].atm = rand() % 3;
+		    uni.bodies[num].enviro = rand() % 3;
+		    uni.bodies[num].savage = (rand() % 6)+4;
+		    uni.bodies[num].popgrow = (rand() % 10)+5;
+		    break;
+		    }
+		case 1: //Oceanic
+		    {
+		    sscanf("Oceanic","%s",uni.bodies[num].typnm);
+		    uni.bodies[num].atm = (rand() % 5);
+		    uni.bodies[num].savage = (rand() % 10);
+		    uni.bodies[num].enviro = (rand() % 4)+1;
+		    uni.bodies[num].popgrow = (rand() % 10)-5;
+		    break;
+		    }
+		case 2: //Desert
+		    {
+		    sscanf("Desert","%s",uni.bodies[num].typnm);
+		    uni.bodies[num].atm = (rand() % 4);
+		    uni.bodies[num].savage = (rand() % 6);
+		    uni.bodies[num].enviro = (rand() % 3)+2;
+		    uni.bodies[num].popgrow = (rand() % 5)-5;
+		    break;
+		    }
+		case 3: //Primordial
+		    {
+		    sscanf("Primordial","%s",uni.bodies[num].typnm);
+		    uni.bodies[num].atm = (rand() % 3)+2;
+		    uni.bodies[num].savage = (rand() % 3);
+		    uni.bodies[num].enviro = (rand() % 1)+4;
+		    uni.bodies[num].popgrow = -20;
+		    break;
+		    }
+		case 4: //Ruins
+		    {
+		    sscanf("Ruins","%s",uni.bodies[num].typnm);
+		    uni.bodies[num].atm = (rand() % 4)+1;
+		    uni.bodies[num].savage = (rand() % 8);
+		    uni.bodies[num].enviro = (rand() % 5);
+		    uni.bodies[num].popgrow = (rand() % 25)-5;
+		    break;
+		    }
+		case 5: //Ice
+		    {
+		    sscanf("Ice","%s",uni.bodies[num].typnm);
+		    uni.bodies[num].atm = (rand() % 5);
+		    uni.bodies[num].savage = (rand() % 7);
+		    uni.bodies[num].enviro = (rand() % 5);
+		    uni.bodies[num].popgrow = (rand() % 5)-15;
+		    break;
+		    }
+		case 6: //Terran
+		    {
+		    sscanf("Terran","%s",uni.bodies[num].typnm);
+		    uni.bodies[num].atm = (rand() % 2);
+		    uni.bodies[num].savage = (rand() % 6);
+		    uni.bodies[num].enviro = (rand() % 2);
+		    uni.bodies[num].popgrow = +10;
+		    break;
+		    }
+		case 7: //Gas
+		    {
+		    sscanf("Gas","%s",uni.bodies[num].typnm);
+		    uni.bodies[num].atm = (rand() 	% 2)+3;
+		    uni.bodies[num].savage = (rand() % 2);
+		    uni.bodies[num].enviro = (rand() % 3)+2;
+		    uni.bodies[num].popgrow = -5;
+		    break;
+		    }
+		}
+	uni.bodies[num].maxpop = (100000*uni.bodies[num].radius)*(1-(uni.bodies[num].savage/10))*(1-((uni.bodies[num].atm*5)/100))*(1-((uni.bodies[num].enviro*5)/100)); //works out max population based on the size of the planet, the savagery, the atmosphere and environment
+	uni.bodies[num].pop = rand() % (int)uni.bodies[num].maxpop; //sets a starting population
+	nameSav(num,uni.bodies[num].savNm);
+	nameAtmo(num,uni.bodies[num].atmNm);
+	nameEnviro(num,uni.bodies[num].envNm); //this works out the descripors for the planets terrain types
 	}
 
+//generates moons for each planet
 void genMoons (num)
 	{
-	printf("Moons\n");
 	int cc=0, j=0, i =0;
 	double dist=0;
-	cc = rand()%3;
+	cc = rand()%3; //chooses a number of moons up to 3
 	if (cc > 0)
 		{
 		for(i=0;i<cc;i++)
 			{
 			uni.moons[uni.numMoons].position[0] = uni.bodies[num].position[0]+(uni.bodies[num].position[0]*.15);
-			uni.moons[uni.numMoons].position[1] = uni.bodies[num].position[1]+(uni.bodies[num].position[1]*.15);
+			uni.moons[uni.numMoons].position[1] = uni.bodies[num].position[1]+(uni.bodies[num].position[1]*.15); //sets the position in relation to the homeworld
 			uni.moons[uni.numMoons].position[2] = uni.bodies[num].position[2];
-			//printf("Moon%d\nPosX: %lf PosY: %lf PosZ: %lf\n",uni.numMoons,uni.moons[uni.numMoons].position[0],uni.moons[uni.numMoons].position[1],uni.moons[uni.numMoons].position[2]);
 			uni.moons[uni.numMoons].ang = rand()%6;
 			uni.moons[uni.numMoons].mass = ((float)rand()/(float)RAND_MAX)*2+.1;
-			uni.moons[uni.numMoons].radius = (uni.moons[uni.numMoons].mass/100);
-			uni.moons[uni.numMoons].home = num;
+			uni.moons[uni.numMoons].radius = (uni.moons[uni.numMoons].mass/100); //sets the starting angle, random mass, and radius accordingly
+			uni.moons[uni.numMoons].home = num; //sets the homeworld for the moon
 			for(j=0;j<DIM;j++)
 				{
 				uni.moons[uni.numMoons].colour[j] = rand()/RAND_MAX;
 				dist += pow(uni.moons[uni.numMoons].position[j]-uni.bodies[num].position[j],2);
-				//printf("Moon%d Pos%d %lf Dist %lf\n",uni.numMoons,j,uni.moons[uni.numMoons].position[j],dist);
+				//sets the moons colour and distance from home planet
 				}
 			if (uni.moons[uni.numMoons].colour[0]+uni.moons[uni.numMoons].colour[1]+uni.moons[uni.numMoons].colour[2] == 0)
 				{
-				uni.moons[uni.numMoons].colour[(rand()%2)] = 1;
+				uni.moons[uni.numMoons].colour[(rand()%2)] = 1; //ensures the moon is never black
 				}
-			uni.moons[uni.numMoons].dist = sqrt(dist)/2+uni.bodies[uni.moons[uni.numMoons].home].radius;
+			uni.moons[uni.numMoons].dist = sqrt(dist)/2+uni.bodies[uni.moons[uni.numMoons].home].radius; //works out the actual distance from the homeworld and assigns it
 
-			uni.numMoons ++;
+			uni.numMoons ++; //increases number of moons
 			}
 		}
     }
@@ -577,38 +558,6 @@ printf("Keys\n");
 			zoom *= 0.9;
 			break;
 			}
-        case 'q':
-			{
-			if (showstats==0)
-                {
-                showstats = 2;
-                }
-            if (showstats == 1)
-                {
-                showstats = -1;
-                }
-			break;
-			}
-		/*case 'g':
-			{
-			if (gravtype==0)
-				{
-				gravtype = 2;
-				}
-			if (gravtype == 1)
-				{
-				for(i=0;i<uni.numBodies;i++)
-					{
-					for(j=0;j<DIM;j++)
-						{
-						uni.bodies[i].dist += pow(uni.bodies[i].position[j],2);
-						}
-					uni.bodies[i].dist = sqrt(uni.bodies[i].dist);
-					}
-				gravtype = -1;
-				}
-			break;
-			}*/
 		case 'b':
 			{
 			if (uni.fixed == 0 && uni.numBodies < 1024)
@@ -627,7 +576,7 @@ printf("Keys\n");
 				}
 			break;
 			}
-		case 'o':
+		case 'o': //goes up the menu tree
 			{
 			for(i=1;i<(uni.numBodies-1);i++)
 				{
@@ -640,7 +589,7 @@ printf("Keys\n");
 				}
 			break;
 			}
-		case 'l':
+		case 'l': //goes down the menu tree
 			{
 			for(i=0;i<(uni.numBodies-2);i++)
 				{
@@ -700,29 +649,9 @@ void myDraw(void)
 
 	/* Put your drawing code in here */
 
-    if (showstats > 1)
-        {
-        showstats -= .1;
-        }
-
-    if (showstats < 0)
-        {
-        showstats += .1;
-        }
-
-	if (gravtype > 1)
-        {
-        gravtype -= .1;
-        }
-
-    if (gravtype < 0)
-        {
-        gravtype += .1;
-        }
-
 	if (click > 0)
 		{
-		click -= .1;
+		click -= .1; //keeps click from allowing buttons to repeat dozens of times per timestep
 		}
 
 
@@ -733,7 +662,6 @@ void myDraw(void)
     glPushMatrix();
     glColor3f(1,1,1);
     glRasterPos2f(-0.99,-0.75);
-    //sprintf(buffer,"Number of collisions: %d",uni.numCollisions);
     sprintf(buffer,"o and l to navigate planets");
     glutBitmapString(GLUT_BITMAP_8_BY_13,buffer);
     glRasterPos2f(-0.99,-0.8);
@@ -758,8 +686,7 @@ void myDraw(void)
 		if (uni.buttons[i].selected == 1)
 			{
 			glRasterPos2f(0.45,.95);
-            glColor3f(1,1,1);
-			//sprintf(buffer,"Planet %d\nPop: %.0lfk/%.0lfk\nType: %s\nSavage: %s\nAtm: %s\nEnviro: %s\nDiameter: %.0lfkm",i+1,uni.bodies[i+1].pop,uni.bodies[i+1].maxpop,uni.bodies[i+1].typnm,uni.bodies[i+1].savage,uni.bodies[i+1].atm,uni.bodies[i+1].enviro,uni.bodies[i+1].radius*2*100000);
+            		glColor3f(1,1,1);
 			sprintf(buffer,"Planet %d\nPop: %.0lfk/%.0lfk\nType: %s\nSavage: %s\nAtm: %s\nEnviro: %s\nDiameter: %.0lfkm\nMoons: %d\n",i+1,uni.bodies[i+1].pop,uni.bodies[i+1].maxpop,uni.bodies[i+1].typnm,uni.bodies[i+1].savNm,uni.bodies[i+1].atmNm,uni.bodies[i+1].envNm,uni.bodies[i+1].radius*2*100000,uni.bodies[i].moonnum);
 			glutBitmapString(GLUT_BITMAP_8_BY_13,buffer);
 			glColor3f(0,0,1);
@@ -818,30 +745,28 @@ void myDraw(void)
 
 	newYear();
 }
-
+//These three functions take the terrain rating of the planet and work out its corresponding description
 void nameSav (int plan, char savNm[20])
 	{
-	if (uni.bodies[plan].savage <= 1)
-		{
-		sscanf("Peaceful","%s",savNm);
-		}
-	if (uni.bodies[plan].savage > 1)
+	sscanf("Peaceful","%s",savNm);
+	
+	if (uni.bodies[plan].savage >= 2)
 		{
 		sscanf("Earthlike","%s",savNm);
 		}
-	if (uni.bodies[plan].savage >= 4)
+	if (uni.bodies[plan].savage == 4)
 		{
 		sscanf("Wild","%s",savNm);
 		}
-	if (uni.bodies[plan].savage >= 6)
+	if (uni.bodies[plan].savage >= 5)
 		{
 		sscanf("Dangerous","%s",savNm);
-		}
-	if (uni.bodies[plan].savage >= 8)
+		}		
+	if (uni.bodies[plan].savage >= 7)
 		{
 		sscanf("Predatory","%s",savNm);
 		}
-	if (uni.bodies[plan].savage == 10)
+	if (uni.bodies[plan].savage >= 9)
 		{
 		sscanf("Extreme","%s",savNm);
 		}
@@ -849,21 +774,38 @@ void nameSav (int plan, char savNm[20])
 
 void nameAtmo (int plan, char atmNm[20])
 	{
-	if (uni.bodies[plan].atm <= 0)
+	switch(uni.bodies[plan].atm)
 		{
-		sscanf("Earth Air","%s",atmNm);
-		}
-	if (uni.bodies[plan].atm >= 1)
-		{
-		sscanf("Uncomfortable","%s",atmNm);
-		}
-	if (uni.bodies[plan].atm >= 3)
-		{
-		sscanf("Unhealthy","%s",atmNm);
-		}
-	if (uni.bodies[plan].atm == 5)
-		{
-		sscanf("Poison","%s",atmNm);
+		case 0:
+			{
+			sscanf("Healthy","%s",atmNm);
+			break;
+			}
+		case 1:
+			{
+			sscanf("Earth Standard","%s",atmNm);
+			break;
+			}
+		case 2:
+			{
+			sscanf("Survivable","%s",atmNm);
+			break;
+			}
+		case 3:
+			{
+			sscanf("Unhealthy","%s",atmNm);
+			break;
+			}
+		case 4:
+			{
+			sscanf("Poison","%s",atmNm);
+			break;
+			}
+		case 5:
+			{
+			sscanf("None","%s",atmNm);
+			break;
+			}
 		}
 	}
 
@@ -877,11 +819,11 @@ void nameEnviro (int plan, char envNm[20])
 		{
 		sscanf("Earth-like","%s",envNm);
 		}
-	if (uni.bodies[plan].enviro == 4)
+	if (uni.bodies[plan].enviro == 3)
 		{
 		sscanf("Dangerous","%s",envNm);
 		}
-	if (uni.bodies[plan].enviro >= 5)
+	if (uni.bodies[plan].enviro >= 4)
 		{
 		sscanf("Deadly","%s",envNm);
 		}
