@@ -44,7 +44,7 @@ typedef struct {
 } Object;
 
 typedef struct{
-int plan;//planet number
+int plan;//planet number this menu button will link to
 int selected;
 } Button;
 
@@ -62,7 +62,7 @@ typedef struct {
 void myDrawLib(void);
 void myKeyLib(unsigned char key, int x, int y);
 void initialiseLib(void);
-void simulateGravityLib(int data);//new gravity function to have planets orbiting sun
+void simulateGravityLib(int data);
 void computeCollisionLib(Object *a, Object *b);
 void calculateGravityLib ( double m1, double m2, double pos1[DIM], double pos2[DIM], double G, double result[DIM]);
 int loadUniverseLib ( Universe *u, char filename[]) ;
@@ -77,7 +77,7 @@ void arrayZero(double a[DIM]);//sets an array to zero
 double vectorDot(double a[DIM], double b[DIM]);
 void initialise(void);
 void calculateGravity ( double m1, double m2, double pos1[DIM], double pos2[DIM], double G, double result[DIM]);
-void simulateGravity(int data);
+void simulateGravity(int data);//new gravity function to have planets orbiting sun
 void computeCollision(Object *b1, Object *b2);
 int loadUniverse ( Universe *u, char filename[]) ;
 
