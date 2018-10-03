@@ -90,9 +90,9 @@ void calculateGravityLib ( double m1, double m2, double pos1[DIM], double pos2[D
 int loadUniverseLib ( Universe *u, char filename[]) ;
 void arrayZeroLib(double a[DIM]);
 double vectorDotLib(double a[DIM], double b[DIM]);
-char nameAtmo(int plan,char atmNm[10]);//ranking the atmosphere of a planet in terms of liveability for target advanced life
-char nameEnviro(int plan,char envNm[10]);//ranking the hostility of a planets natural environment for the advanced lifeform pop.
-char nameSav(int plan, char savNm[20]);//ranking the hostility of a planets biological (animal) population
+void nameAtmo(int plan,char atmNm[10]);//ranking the atmosphere of a planet in terms of liveability for target advanced life
+void nameEnviro(int plan,char envNm[10]);//ranking the hostility of a planets natural environment for the advanced lifeform pop.
+void nameSav(int plan, char savNm[20]);//ranking the hostility of a planets biological (animal) population
 
 // Prototypes from main program
 void arrayZero(double a[DIM]);//sets an array to zero
