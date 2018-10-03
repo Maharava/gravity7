@@ -1,5 +1,6 @@
 ```c
 
+
 #ifndef GRAVITY_7
 #define GRAVITY_7
 
@@ -26,46 +27,30 @@ typedef struct {
 	double accel[DIM];
 	double radius;
 	float colour[3];
-	char name[20];
-	double ang;
-	double dist;
-	int home;
-} Moon;
-
-typedef struct {
-	double mass;
-	double position[DIM];
-	double velocity[DIM];
-	double accel[DIM];
-	double radius;
-	float colour[3];
-	double pop;
-	double maxpop;
-	double popgrow;
-	int atm;
+	double pop;//population
+	double maxpop;//maximum population on planet
+	double popgrow;//yearly growth of population based on many factors
+	int atm;//atmosphere number
 	char name[20];
 	char typnm[20];
-	int type;
-	int savage;
-	int enviro;
-	int moonnum;
-	double ang;
-	double dist;
-	char atmNm[20];
-	char savNm[20];
-	char envNm[20];
+	int type;//planet type, water, ice etc.
+	int savage;//savagery of planet
+	int enviro;//environment of planet
+	double ang;//angle for planet-sun orbit function
+	double dist;//distant from sun which planets orbit
+	char atmNm[10];//atmosphere rank name
+	char savNm[20];//savagery rank name
+	char envNm[10];//enviro. rank name
 } Object;
 
 typedef struct{
-int plan;
+int plan;//planet number
 int selected;
 } Button;
 
 typedef struct {
     int numBodies ;
     Object bodies[MAX_BODIES] ;
-    Moon moons[MAX_BODIES];
-    int numMoons;
     double trace[MAX_BODIES][TRACEN][DIM] ;
     long numCollisions ;
     int collided[MAX_BODIES];  // "status" array, indicating whether a body has already collided or not
@@ -77,23 +62,22 @@ typedef struct {
 void myDrawLib(void);
 void myKeyLib(unsigned char key, int x, int y);
 void initialiseLib(void);
-void simulateGravityLib(int data);
+void simulateGravityLib(int data);//new gravity function to have planets orbiting sun
 void computeCollisionLib(Object *a, Object *b);
 void calculateGravityLib ( double m1, double m2, double pos1[DIM], double pos2[DIM], double G, double result[DIM]);
 int loadUniverseLib ( Universe *u, char filename[]) ;
 void arrayZeroLib(double a[DIM]);
 double vectorDotLib(double a[DIM], double b[DIM]);
-void nameAtmo(int plan,char atmNm[20]);
-void nameEnviro(int plan,char envNm[20]);
-void nameSav(int plan, char savNm[20]);
+char nameAtmo(int plan,char atmNm[10]);//ranking the atmosphere of a planet in terms of liveability for target advanced life
+char nameEnviro(int plan,char envNm[10]);//ranking the hostility of a planets natural environment for the advanced lifeform pop.
+char nameSav(int plan, char savNm[20]);//ranking the hostility of a planets biological (animal) population
 
 // Prototypes from main program
-void arrayZero(double a[DIM]);
+void arrayZero(double a[DIM]);//sets an array to zero
 double vectorDot(double a[DIM], double b[DIM]);
 void initialise(void);
 void calculateGravity ( double m1, double m2, double pos1[DIM], double pos2[DIM], double G, double result[DIM]);
 void simulateGravity(int data);
-void simulateGravityNewt(int data);
 void computeCollision(Object *b1, Object *b2);
 int loadUniverse ( Universe *u, char filename[]) ;
 
