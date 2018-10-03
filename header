@@ -31,8 +31,8 @@ typedef struct {
 	double maxpop;//maximum population on planet
 	double popgrow;//yearly growth of population based on many factors
 	int atm;//atmosphere number
-	char name[20];
-	char typnm[20];
+	char name[20]; //The name of the planet, currently unused
+	char typnm[20]; //the type of the planet - desert, ice, etc
 	int type;//planet type, water, ice etc.
 	int savage;//savagery of planet
 	int enviro;//environment of planet
