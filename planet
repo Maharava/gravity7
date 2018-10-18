@@ -1,0 +1,303 @@
+```c
+
+//This header contains all the planet generation and naming code
+
+
+
+void nameAtmo(int plan,char atmNm[30]);//ranking the atmosphere of a planet in terms of liveability for target advanced life
+void nameEnviro(int plan,char envNm[30]);//ranking the hostility of a planets natural environment for the advanced lifeform pop.
+void nameSav(int plan, char savNm[30]);//ranking the hostility of a planets biological (animal) population
+//void describeSavagery(char *s, int plan);
+int findMaxPop(int num);
+
+System sys;
+
+//These four functions take the terrain rating of the planet and work out its corresponding description
+void nameSav (int plan, char savNm[30])
+	{
+	sscanf("Peaceful","%s",savNm);
+
+	if (sys.bodies[plan].savage >= 2)
+		{
+		sscanf("Earthlike","%s",savNm);
+		}
+	if (sys.bodies[plan].savage == 4)
+		{
+		sscanf("Wild","%s",savNm);
+		}
+	if (sys.bodies[plan].savage >= 5)
+		{
+		sscanf("Dangerous","%s",savNm);
+		}
+	if (sys.bodies[plan].savage >= 7)
+		{
+		sscanf("Predatory","%s",savNm);
+		}
+	if (sys.bodies[plan].savage >= 9)
+		{
+		sscanf("Extreme","%s",savNm);
+		}
+	}
+
+void nameAtmo (int plan, char atmNm[30])
+	{
+	switch(sys.bodies[plan].atm)
+		{
+		case 0:
+			{
+			sscanf("Healthy","%s",atmNm);
+			break;
+			}
+		case 1:
+			{
+			sscanf("Earth Standard","%s",atmNm);
+			break;
+			}
+		case 2:
+			{
+			sscanf("Survivable","%s",atmNm);
+			break;
+			}
+		case 3:
+			{
+			sscanf("Unhealthy","%s",atmNm);
+			break;
+			}
+		case 4:
+			{
+			sscanf("Poison","%s",atmNm);
+			break;
+			}
+		case 5:
+			{
+			sscanf("None","%s",atmNm);
+			break;
+			}
+		}
+	}
+
+void nameEnviro (int plan, char envNm[30])
+	{
+	if (sys.bodies[plan].enviro <= 1)
+		{
+		sscanf("Eden-like","%s",envNm);
+		}
+	if (sys.bodies[plan].enviro >= 2)
+		{
+		sscanf("Earth-like","%s",envNm);
+		}
+	if (sys.bodies[plan].enviro == 3)
+		{
+		sscanf("Dangerous","%s",envNm);
+		}
+	if (sys.bodies[plan].enviro >= 4)
+		{
+		sscanf("Deadly","%s",envNm);
+		}
+	}
+
+void nameType (int num)
+	{
+	switch(sys.bodies[num].type)
+			{
+			case 0: //arboreal
+				{
+				sscanf("Arboreal","%s",sys.bodies[num].typnm);
+				break;
+				}
+			case 1: //Oceanic
+				{
+				sscanf("Oceanic","%s",sys.bodies[num].typnm);
+				break;
+				}
+			case 2: //Desert
+				{
+				sscanf("Desert","%s",sys.bodies[num].typnm);
+				break;
+				}
+			case 3: //Primordial
+				{
+				sscanf("Primordial","%s",sys.bodies[num].typnm);
+				break;
+				}
+			case 4: //Ruins
+				{
+				sscanf("Ruins","%s",sys.bodies[num].typnm);
+				break;
+				}
+			case 5: //Ice
+				{
+				sscanf("Ice","%s",sys.bodies[num].typnm);
+				break;
+				}
+			case 6: //Terran
+				{
+				sscanf("Terran","%s",sys.bodies[num].typnm);
+				break;
+				}
+			case 7: //Gas
+				{
+				sscanf("Gas","%s",sys.bodies[num].typnm);
+				break;
+				}
+			}
+	}
+
+//This generates the worlds terrain data
+void genworld (int num)
+	{
+	sys.bodies[num].moonnum = 0;
+	sys.bodies[num].type = rand() % 7;
+	nameType(num);
+	//after getting a random type, these case statements set the name of the planet type, the atmosphere, environment, savagery and population growth
+	switch(sys.bodies[num].type)
+		{
+		case 0: //arboreal
+		    {
+		    sys.bodies[num].colour[1] = 1;
+		    sys.bodies[num].atm = rand() % 3;
+		    sys.bodies[num].enviro = rand() % 3;
+		    sys.bodies[num].savage = (rand() % 6)+4;
+		    sys.bodies[num].popgrow = (rand() % 10)+5;
+		    break;
+		    }
+		case 1: //Oceanic
+		    {
+		    sys.bodies[num].colour[2] = 1;
+		    sys.bodies[num].atm = (rand() % 5);
+		    sys.bodies[num].savage = (rand() % 10);
+		    sys.bodies[num].enviro = (rand() % 4)+1;
+		    sys.bodies[num].popgrow = (rand() % 10)-5;
+		    break;
+		    }
+		case 2: //Desert
+		    {
+		    sys.bodies[num].colour[0] = 1;
+		    sys.bodies[num].atm = (rand() % 4);
+		    sys.bodies[num].savage = (rand() % 6);
+		    sys.bodies[num].enviro = (rand() % 3)+2;
+		    sys.bodies[num].popgrow = (rand() % 5)-5;
+		    break;
+		    }
+		case 3: //Primordial
+		    {
+		    sys.bodies[num].colour[0] = 1;
+		    sys.bodies[num].atm = (rand() % 3)+2;
+		    sys.bodies[num].savage = (rand() % 3);
+		    sys.bodies[num].enviro = (rand() % 1)+4;
+		    sys.bodies[num].popgrow = -20;
+		    break;
+		    }
+		case 4: //Ruins
+		    {
+		    sys.bodies[num].colour[1] = 1;
+		    sys.bodies[num].atm = (rand() % 4)+1;
+		    sys.bodies[num].savage = (rand() % 8);
+		    sys.bodies[num].enviro = (rand() % 5);
+		    sys.bodies[num].popgrow = (rand() % 25)-5;
+		    break;
+		    }
+		case 5: //Ice
+		    {
+		    sys.bodies[num].colour[2] = 1;
+		    sys.bodies[num].atm = (rand() % 5);
+		    sys.bodies[num].savage = (rand() % 7);
+		    sys.bodies[num].enviro = (rand() % 5);
+		    sys.bodies[num].popgrow = (rand() % 5)-15;
+		    break;
+		    }
+		case 6: //Terran
+		    {
+		    sys.bodies[num].colour[1] = 1;
+		    sys.bodies[num].atm = (rand() % 2);
+		    sys.bodies[num].savage = (rand() % 6);
+		    sys.bodies[num].enviro = (rand() % 2);
+		    sys.bodies[num].popgrow = +10;
+		    break;
+		    }
+		case 7: //Gas
+		    {
+		    sys.bodies[num].colour[0] = 1;
+		    sys.bodies[num].atm = (rand() 	% 2)+3;
+		    sys.bodies[num].savage = (rand() % 2);
+		    sys.bodies[num].enviro = (rand() % 3)+2;
+		    sys.bodies[num].popgrow = -5;
+		    break;
+		    }
+		}
+	sys.bodies[num].maxpop = findMaxPop(num);
+	sys.bodies[num].pop = rand() % (int)sys.bodies[num].maxpop; //sets a starting population
+	sprintf(sys.bodies[num].name,"Planet%d",num);
+	nameSav(num,sys.bodies[num].savNm);
+	nameAtmo(num,sys.bodies[num].atmNm);
+	nameEnviro(num,sys.bodies[num].envNm); //this works out the descripors for the planets terrain types
+	}
+
+int findMaxPop(int num)
+	{
+	return(100000*sys.bodies[num].radius)*(1-(sys.bodies[num].savage/10))*(1-((sys.bodies[num].atm*5)/100))*(1-((sys.bodies[num].enviro*5)/100)); //works out max population based on the size of the planet, the savagery, the atmosphere and environment
+	}
+
+//generates moons for each planet
+void genMoons (int num)
+	{
+	int cc=0, j=0, i =0;
+	double dist=0;
+	cc = rand()%3; //chooses a number of moons up to 3
+	sys.bodies[num].moonnum = cc;
+	if (cc > 0)
+		{
+		for(i=0;i<cc;i++)
+			{
+			sys.moons[sys.numMoons].position[0] = sys.bodies[num].position[0]+(sys.bodies[num].position[0]*.15);
+			sys.moons[sys.numMoons].position[1] = sys.bodies[num].position[1]+(sys.bodies[num].position[1]*.15); //sets the position in relation to the homeworld
+			sys.moons[sys.numMoons].position[2] = sys.bodies[num].position[2];
+			sys.moons[sys.numMoons].ang = rand()%6;
+			sys.moons[sys.numMoons].mass = ((float)rand()/(float)RAND_MAX)*2+.1;
+			sys.moons[sys.numMoons].radius = (sys.moons[sys.numMoons].mass/100); //sets the starting angle, random mass, and radius accordingly
+			sys.moons[sys.numMoons].home = num; //sets the homeworld for the moon
+			for(j=0;j<DIM;j++)
+				{
+				sys.moons[sys.numMoons].colour[j] = (float)rand()/(float)RAND_MAX;
+				dist += pow(sys.moons[sys.numMoons].position[j]-sys.bodies[num].position[j],2);
+				//sets the moons colour and distance from home planet
+				}
+			if (sys.moons[sys.numMoons].colour[0]+sys.moons[sys.numMoons].colour[1]+sys.moons[sys.numMoons].colour[2] == 0)
+				{
+				sys.moons[sys.numMoons].colour[(rand()%2)] = 1; //ensures the moon is never black
+				}
+			sys.moons[sys.numMoons].dist = sqrt(dist)/2+sys.bodies[sys.moons[sys.numMoons].home].radius; //works out the actual distance from the homeworld and assigns it
+			sprintf(sys.moons[sys.numMoons].name,"Moon%dPlanet%d",num,i+1);
+			sys.numMoons ++;
+			}
+		}
+    }
+
+/*void describeSavagery(char *s, int plan)
+	{
+	if (sys.bodies[plan].savage < 2)
+		{
+		sscanf("The alien life on this world are generally docile, herbivorous creatures, with few that can threaten sentients.","%s",&s);
+		}
+	if (sys.bodies[plan].savage >= 2)
+		{
+		sscanf("Similar to Earth, the few aliens of this world that can threaten sentients either live in remote areas, or only attack when provoked.","%s",&s);
+		}
+	if (sys.bodies[plan].savage == 4)
+		{
+		sscanf("Aliens with strength to threaten sentients are not uncommon, but generally don't bother colonists.","%s",&s);
+		}
+	if (sys.bodies[plan].savage >= 5)
+		{
+		sscanf("There are enough predators on this world for colonists to always carry a weapon.","%s",&s);
+		}
+	if (sys.bodies[plan].savage >= 7)
+		{
+		sscanf("Living here is ill advised, as local wildlife will hunt whatever it can find.","%s",&s);
+		}
+	if (sys.bodies[plan].savage >= 9)
+		{
+		sscanf("It seems the Universe is playing a joke on sentients. Almost everything here can kill you, and most of it WANTS to.","%s",&s);
+		}
+	}
+*/
