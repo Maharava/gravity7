@@ -1,0 +1,76 @@
+
+```c
+
+#ifndef GRAVITY_7
+#define GRAVITY_7
+
+#define DIM 3
+#define NUM_BODIES 4000
+#define MAX_BODIES 10000
+
+#define TIMER 20
+
+/* Define the Window dimensions */
+#define WIN_WIDTH	1100	/* WINDOW Width in pixels */
+#define WIN_HEIGHT	650	/* WINDOW Height in pixels */
+
+/* Define the key to exit the system */
+#define ESC	27
+
+typedef struct {
+	double mass;
+	double position[DIM];
+	double radius;
+	float colour[3];
+	char name[30];
+	double ang;
+	double dist;
+	int home;
+} Moon;
+
+typedef struct {
+	double mass;
+	double position[DIM];
+	double radius;
+	double colour[3];
+	double pop;//population
+	double maxpop;//maximum population on planet
+	double popgrow;//yearly growth of population based on many factors
+	int atm;//atmosphere number
+	char name[30]; //The name of the planet, currently unused
+	char typnm[30]; //the type of the planet - desert, ice, etc
+	int type;//planet type, water, ice etc.
+	int savage;//savagery of planet
+	int enviro;//environment of planet
+	int moonnum; //the number of moons around this planet
+	double ang;//angle for planet-sun orbit function
+	double dist;//distant from sun which planets orbit
+	char atmNm[30];//atmosphere rank name
+	char savNm[30];//savagery rank name
+	char envNm[30];//enviro. rank name
+} Object;
+
+typedef struct{
+int plan;//planet number this menu button will link to
+int selected;
+} Button;
+
+typedef struct {
+    int sysBodies ;
+    Object bodies[MAX_BODIES] ;
+    Moon moons[MAX_BODIES];
+    int numMoons;
+    Button buttons[MAX_BODIES];
+    int fixed ; // determines whether universe was read from file (1) or random (0)
+} System ;
+
+
+void arrayZero(double a[DIM]);//sets an array to zero
+void initialise(void);
+void simulateGravity(int data);//new gravity function to have planets orbiting sun
+int loadSystem ( System *u, int sysnum);
+
+
+
+#endif
+
